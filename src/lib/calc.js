@@ -32,3 +32,8 @@ export function bestStreak(dateSet) {
 }
 
 export const dayPercent = (done, total) => (total ? Math.round((done / total) * 100) : 0)
+
+const pad2 = (n) => String(n).padStart(2, '0')
+export function localISO(date = new Date()) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+}
