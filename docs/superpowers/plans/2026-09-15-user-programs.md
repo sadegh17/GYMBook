@@ -26,7 +26,7 @@
 ```
 supabase/
   migrations/0001_init.sql          (موجود)
-  migrations/0002_user_programs.sql  (ساخت — schema + data + RLS + trigger + view)
+  migrations/0003_user_programs.sql  (ساخت — schema + data + RLS + trigger + view)
   seed.sql                           (اصلاح: برنامه‌های سراسری حالا program_sections/section_id دارند)
 docs/RUNBOOK.md                      (افزودن اجرای 0002 + شمارش policy انتظار)
 src/
@@ -200,7 +200,7 @@ git commit -m "feat: pure helpers for user-program weekdays and 3-program limit"
 ### Task 2: مهاجرت دیتابیس ۰۰۰۲ (schema + data + checks snapshots)
 
 **Files:**
-- Create: `supabase/migrations/0002_user_programs.sql`
+- Create: `supabase/migrations/0003_user_programs.sql`
 - Modify: `supabase/seed.sql` (درج `program_sections` و `section_id`)
 - Modify: `docs/RUNBOOK.md`
 
@@ -209,7 +209,7 @@ git commit -m "feat: pure helpers for user-program weekdays and 3-program limit"
 
 - [ ] **Step 1: نوشتن فایل مهاجرت (بدنهٔ schema + backfill)**
 
-`supabase/migrations/0002_user_programs.sql`:
+`supabase/migrations/0003_user_programs.sql`:
 
 ```sql
 -- GYMBook — مهاجرت ۰۰۰۲: برنامه‌های شخصی کاربر
@@ -414,9 +414,9 @@ Expected: PASS (مهاجرت SQL روی تست واحد اثر ندارد؛ مط
 
 سپس آیتم‌ها `. (..., section_id=sec_warm/sec_main/sec_cool, sets, reps, rest_sec, sort)`. (این بازنویسی مکانیکی در کل فایل؛ مقادیر sets/reps/rest بدون تغییر.)
 
-- [ ] **Step 5: به‌روزرسانی RUNBOOK (اجرای ۰۰۰۲ + شمارش جدید policy)**
+- [ ] **Step 5: به‌روزرسانی RUNBOOK (اجرای ۰۰۰۳ + شمارش جدید policy)**
 
-در `docs/RUNBOOK.md`، بند جدید «۱.۴ اجرای مهاجرت ۰۰۰۲» اضافه کن: Paste `0002_user_programs.sql` → Run → `Success`. صحت‌سنجی:
+در `docs/RUNBOOK.md`، بند «۱.۵ اجرای مهاجرت ۰۰۰۳» را کامل کن (بند ۱.۴ را مهاجرت «تایید حساب» `0002_auth_approval.sql` مصرف کرده است): Paste `0003_user_programs.sql` → Run → `Success`. صحت‌سنجی:
 
 ```sql
 select count(*) from pg_policies where schemaname='public'
@@ -428,7 +428,7 @@ select count(*) from pg_views where viewname='v_day_progress'; -- 1
 - [ ] **Step 6: commit**
 
 ```bash
-git add supabase/migrations/0002_user_programs.sql supabase/seed.sql docs/RUNBOOK.md
+git add supabase/migrations/0003_user_programs.sql supabase/seed.sql docs/RUNBOOK.md
 git commit -m "feat: migration 0002 — owner_id, soft delete, program_sections, checks snapshots, RLS, limit trigger"
 ```
 

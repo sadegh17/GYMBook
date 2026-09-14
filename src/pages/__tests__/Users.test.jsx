@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
@@ -122,6 +122,14 @@ describe('Users inline edit — self demote/lockout guard (R18)', () => {
     fireEvent.blur(ownWeight)
     await waitFor(() => expect(state.updated).toEqual([{ weight_kg: 85 }]))
   })
+
+  it('toggling another user approval keeps approved and status in sync', async () => {
+    mockAuth.profile = { id: 'a1', role: 'admin' }
+    ui()
+    const otherApproved = await screen.findByLabelText('تأیید Member')
+    fireEvent.click(otherApproved)
+    await waitFor(() => expect(state.updated).toEqual([{ approved: true, status: 'approved' }]))
+  })
 })
 
 describe('Users inline edit — error handling', () => {
@@ -135,5 +143,47 @@ describe('Users inline edit — error handling', () => {
     // refresh local list from server so controlled inputs never desync
     await waitFor(() => expect(supabase.from).toHaveBeenCalledWith('profiles'))
     expect(mockAuth.refresh).not.toHaveBeenCalled()
+  })
+})
+
+describe('Users pending-registration tab', () => {
+  const withPending = () => {
+    mockAuth.profile = { id: 'a1', role: 'admin' }
+    state.profiles = [
+      { id: 'a1', name: 'Admin', email: 'a@g.t', role: 'admin', approved: true, status: 'approved', weight_kg: 80, theme: 'sadeq', program_id: null, created_at: '1' },
+      { id: 'p1', name: 'NewGuy', email: 'n@g.t', role: 'member', approved: false, status: 'pending', weight_kg: 70, theme: 'sadeq', program_id: null, created_at: '2' },
+    ]
+  }
+
+  it('shows a pending tab with a live counter', async () => {
+    withPending()
+    ui()
+    const tab = await screen.findByRole('tab', { name: /در انتظار تأیید/ })
+    await waitFor(() => expect(tab.textContent).toContain('1'))
+  })
+
+  it('lists pending requests with approve and reject actions', async () => {
+    withPending()
+    ui()
+    fireEvent.click(await screen.findByRole('tab', { name: /در انتظار تأیید/ }))
+    expect(await screen.findByText('NewGuy')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'تأیید' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'رد' })).toBeTruthy()
+  })
+
+  it('approving a request updates status to approved', async () => {
+    withPending()
+    ui()
+    fireEvent.click(await screen.findByRole('tab', { name: /در انتظار تأیید/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'تأیید' }))
+    await waitFor(() => expect(state.updated).toEqual([{ status: 'approved', approved: true }]))
+  })
+
+  it('rejecting a request updates status to rejected', async () => {
+    withPending()
+    ui()
+    fireEvent.click(await screen.findByRole('tab', { name: /در انتظار تأیید/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'رد' }))
+    await waitFor(() => expect(state.updated).toEqual([{ status: 'rejected', approved: false }]))
   })
 })

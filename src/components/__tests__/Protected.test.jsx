@@ -91,6 +91,35 @@ describe('Protected', () => {
     expect(auth.signOut).toHaveBeenCalledTimes(1)
   })
 
+  it('shows a rejected message when the request was rejected', () => {
+    auth.session = { user: { id: 'u1' } }
+    auth.profile = { id: 'u1', role: 'member', approved: false, status: 'rejected' }
+    renderAt()
+    expect(screen.getByText('درخواست شما رد شد')).toBeTruthy()
+    expect(screen.queryByText('secret-content')).toBeNull()
+  })
+
+  it('polls for approval every 10s while pending, then lets the user in', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    auth.session = { user: { id: 'u1' } }
+    auth.profile = { id: 'u1', role: 'member', approved: false, status: 'pending' }
+    const { rerender } = renderAt()
+    expect(screen.getByText('در انتظار تایید ادمین')).toBeTruthy()
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(auth.refresh).toHaveBeenCalledTimes(1)
+    auth.profile = { id: 'u1', role: 'member', approved: true, status: 'approved' }
+    rerender(
+      <MemoryRouter initialEntries={['/secret']}>
+        <Routes>
+          <Route path="/login" element={<div>login-page</div>} />
+          <Route path="/secret" element={<Protected><div>secret-content</div></Protected>} />
+        </Routes>
+      </MemoryRouter>
+    )
+    expect(screen.getByText('secret-content')).toBeTruthy()
+    vi.useRealTimers()
+  })
+
   it('renders children when session + approved profile', () => {
     auth.session = { user: { id: 'u1' } }
     auth.profile = { id: 'u1', role: 'member', approved: true }
