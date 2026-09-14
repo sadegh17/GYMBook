@@ -37,6 +37,7 @@ export default function Users() {
   const [form, setForm] = useState({ name: '', email: '', password: '', weight: '', theme: 'sadeq', program: '', role: 'member' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [inlineMsg, setInlineMsg] = useState('')
   const [banner, setBanner] = useState(false)
   // Temp password is kept out of React state: held in a ref, echoed once in
   // the success banner, then dropped on close. See handleSubmit.
@@ -67,9 +68,25 @@ export default function Users() {
   }
 
   const inline = async (id, patch, isSelf) => {
-    await updateProfileField(id, patch)
-    qc.invalidateQueries({ queryKey: ['profiles'] })
-    if (isSelf && ('role' in patch || 'approved' in patch)) refresh?.()
+    // R18 lockout guard: an admin must never change their OWN role or approved
+    // flag (would demote/unapprove and lock themselves out of this panel).
+    // We abort before the update API call and resync the controlled inputs
+    // from the server so the select/checkbox can't visually desync.
+    if (isSelf && ('role' in patch || 'approved' in patch)) {
+      setInlineMsg('نمی‌توانید دسترسی یا تایید حساب خودتان را تغییر دهید')
+      qc.invalidateQueries({ queryKey: ['profiles'] })
+      return
+    }
+    setInlineMsg('')
+    try {
+      await updateProfileField(id, patch)
+      qc.invalidateQueries({ queryKey: ['profiles'] })
+      if (isSelf) refresh?.()
+    } catch {
+      // Surfaced as a toast; list is refetched so UI never desyncs after a failure.
+      setInlineMsg('خطا در ذخیره تغییرات — لطفاً دوباره تلاش کنید')
+      qc.invalidateQueries({ queryKey: ['profiles'] })
+    }
   }
 
   // Hooks must run unconditionally; non-admin guard is enforced after them.
@@ -124,6 +141,7 @@ export default function Users() {
       <div className="card">
         <h2>کاربران</h2>
         <p className="muted hint">برای بازنشانی رمز، کاربر از صفحه پروفایل اقدام کند.</p>
+        {inlineMsg && <p className="err" role="alert">{inlineMsg}</p>}
         {usersQuery.isLoading && <div className="center muted" role="status">در حال بارگذاری…</div>}
         {usersQuery.isError && (
           <div className="center">

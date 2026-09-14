@@ -85,6 +85,13 @@ beforeEach(() => {
 })
 
 describe('createUserWithRestore', () => {
+  it('reads the admin session (getSession) BEFORE signUp so saved tokens exist first', async () => {
+    await createUserWithRestore(input)
+    expect(m.order.indexOf('getSession')).toBeGreaterThanOrEqual(0)
+    expect(m.order.indexOf('getSession')).toBeLessThan(m.order.indexOf('signUp'))
+    expect(supabase.auth.getSession).toHaveBeenCalledTimes(1)
+  })
+
   it('calls signUp then signOut then setSession(savedTokens) in that order', async () => {
     await createUserWithRestore(input)
     const iUp = m.order.indexOf('signUp')
