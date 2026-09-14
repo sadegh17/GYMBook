@@ -20,6 +20,7 @@ export default function Layout({ children }) {
         </div>
         <nav className="wrap nav">
           <NavLink to="/" end>امروز</NavLink>
+          <NavLink to="/programs">برنامه‌ها</NavLink>
           <NavLink to="/report">گزارش</NavLink>
           <NavLink to="/profile">پروفایل</NavLink>
           {profile?.role === 'admin' && <NavLink to="/admin">پنل ادمین</NavLink>}
