@@ -36,4 +36,26 @@ describe('validateExercise', () => {
   it('accepts numeric strings for met and sec_per_rep', () => {
     expect(validateExercise({ ...valid, met: '6', sec_per_rep: '2.5' })).toEqual([])
   })
+
+  describe('inclusive boundaries', () => {
+    it('accepts met at the exact endpoints 1 and 15', () => {
+      expect(validateExercise({ ...valid, met: 1 })).toEqual([])
+      expect(validateExercise({ ...valid, met: 15 })).toEqual([])
+    })
+
+    it('rejects met just outside the endpoints (0.99 and 15.01)', () => {
+      expect(validateExercise({ ...valid, met: 0.99 })).not.toHaveLength(0)
+      expect(validateExercise({ ...valid, met: 15.01 })).not.toHaveLength(0)
+    })
+
+    it('accepts sec_per_rep at the exact endpoints 0.5 and 20', () => {
+      expect(validateExercise({ ...valid, sec_per_rep: 0.5 })).toEqual([])
+      expect(validateExercise({ ...valid, sec_per_rep: 20 })).toEqual([])
+    })
+
+    it('rejects sec_per_rep just outside the endpoints (0.49 and 20.1)', () => {
+      expect(validateExercise({ ...valid, sec_per_rep: 0.49 })).not.toHaveLength(0)
+      expect(validateExercise({ ...valid, sec_per_rep: 20.1 })).not.toHaveLength(0)
+    })
+  })
 })
