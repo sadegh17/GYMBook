@@ -164,6 +164,23 @@ describe('Programs builder', () => {
     expect(opts).toContain('اسکوات')
   })
 
+  it('section change appends to the target section with a collision-free sort', async () => {
+    mockAuth.profile = { id: 'a1', role: 'admin' }
+    ui()
+    fireEvent.click(await screen.findByText('برنامه A'))
+    const sectionSelect = await screen.findByLabelText('بخش (اسکوات)')
+    fireEvent.change(sectionSelect, { target: { value: 'warm' } })
+    await screen.findByRole('status')
+
+    const patch = calls.updated.find((p) => p.section === 'warm')
+    expect(patch).toBeTruthy()
+    // warm already held one item (sort 1) → the moved item lands on sort 2
+    expect(patch.sort).toBe(2)
+
+    const warmSorts = state.days[0].items.filter((i) => i.section === 'warm').map((i) => i.sort).concat(patch.sort)
+    expect(new Set(warmSorts).size).toBe(warmSorts.length)
+  })
+
   it('inserts a chosen exercise into its section with next sort', async () => {
     mockAuth.profile = { id: 'a1', role: 'admin' }
     ui()

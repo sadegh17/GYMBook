@@ -159,6 +159,12 @@ export default function Programs() {
     }, 'ترتیب ذخیره شد')
   }
 
+  const changeSection = (item, section) => {
+    if (!day || section === item.section) return
+    const count = (day.items ?? []).filter((i) => i.section === section).length
+    saveItemField(item, { section, sort: count + 1 })
+  }
+
   const saveDayField = (patch) => run(
     () => supabase.from('program_days').update(patch).eq('id', day.id).then(({ error }) => { if (error) throw error }),
     'روز به‌روزرسانی شد'
@@ -257,7 +263,7 @@ export default function Programs() {
                       <NumField label={`استراحت (${name})`} value={item.rest_sec} onSave={(v) => saveItemField(item, { rest_sec: v })} />
                       <label>بخش
                         <select aria-label={`بخش (${name})`} value={item.section}
-                          onChange={(e) => { if (e.target.value !== item.section) saveItemField(item, { section: e.target.value }) }}>
+                          onChange={(e) => changeSection(item, e.target.value)}>
                           {SECTIONS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
                         </select>
                       </label>
