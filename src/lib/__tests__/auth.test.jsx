@@ -46,7 +46,7 @@ beforeEach(async () => {
   Object.values(mocks).forEach((fn) => fn && fn.mockReset && fn.mockReset())
   mocks.getSession.mockResolvedValue({ data: { session: null } })
   mocks.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } })
-  mocks.maybeSingle.mockResolvedValue({ data: null })
+  mocks.maybeSingle.mockResolvedValue({ data: null, error: null })
   mocks.eq.mockReturnValue({ maybeSingle: mocks.maybeSingle })
   mocks.select.mockReturnValue({ eq: mocks.eq })
   mocks.from.mockReturnValue({ select: mocks.select })
@@ -75,7 +75,8 @@ describe('AuthContext', () => {
   })
 
   it('signIn delegates to supabase.auth.signInWithPassword', async () => {
-    mocks.signInWithPassword.mockResolvedValue({ data: {}, error: null })
+    mocks.signInWithPassword.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null })
+    mocks.maybeSingle.mockResolvedValue({ data: { status: 'approved', approved: true }, error: null })
     let ctx
     const Grab = () => { ctx = useAuth(); return null }
     render(<AuthProvider><Grab /></AuthProvider>)
@@ -110,5 +111,109 @@ describe('AuthContext', () => {
       await ctx.signOut()
     })
     expect(mocks.signOut).toHaveBeenCalled()
+  })
+})
+
+describe('AuthContext — login gating', () => {
+  it('signs out and reports NOT_APPROVED for a pending member', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null })
+    mocks.maybeSingle.mockResolvedValue({ data: { status: 'pending', approved: false }, error: null })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signIn('a@b.c', 'pw') })
+    expect(mocks.signOut).toHaveBeenCalledTimes(1)
+    expect(res).toEqual({ error: 'NOT_APPROVED' })
+  })
+
+  it('signs out and reports REJECTED for a rejected member', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null })
+    mocks.maybeSingle.mockResolvedValue({ data: { status: 'rejected', approved: false }, error: null })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signIn('a@b.c', 'pw') })
+    expect(mocks.signOut).toHaveBeenCalledTimes(1)
+    expect(res).toEqual({ error: 'REJECTED' })
+  })
+
+  it('returns ok for an approved member without signing out', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null })
+    mocks.maybeSingle.mockResolvedValue({ data: { status: 'approved', approved: true }, error: null })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signIn('a@b.c', 'pw') })
+    expect(mocks.signOut).not.toHaveBeenCalled()
+    expect(res).toEqual({ ok: true })
+  })
+
+  it('reports EMAIL_NOT_CONFIRMED without signing out', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { session: null }, error: { message: 'Email not confirmed' } })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signIn('a@b.c', 'pw') })
+    expect(mocks.signOut).not.toHaveBeenCalled()
+    expect(res).toEqual({ error: 'EMAIL_NOT_CONFIRMED' })
+  })
+
+  it('reports INVALID_CREDENTIALS on bad password', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { session: null }, error: { message: 'Invalid login credentials' } })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signIn('a@b.c', 'pw') })
+    expect(res).toEqual({ error: 'INVALID_CREDENTIALS' })
+  })
+})
+
+describe('AuthContext — signup gating', () => {
+  it('signs out after signup for a pending member and reports pending', async () => {
+    mocks.signUp.mockResolvedValue({ data: { user: { id: 'u1' }, session: { user: { id: 'u1' } } }, error: null })
+    mocks.maybeSingle.mockResolvedValue({ data: { status: 'pending', approved: false }, error: null })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signUp('a@b.c', 'pw', 'Ali') })
+    expect(mocks.signOut).toHaveBeenCalledTimes(1)
+    expect(mocks.signUp).toHaveBeenCalledWith({ email: 'a@b.c', password: 'pw', options: { data: { name: 'Ali' } } })
+    expect(res).toEqual({ ok: true, status: 'pending' })
+  })
+
+  it('keeps the session for the first approved admin and reports approved', async () => {
+    mocks.signUp.mockResolvedValue({ data: { user: { id: 'u1' }, session: { user: { id: 'u1' } } }, error: null })
+    mocks.maybeSingle.mockResolvedValue({ data: { status: 'approved', approved: true }, error: null })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signUp('a@b.c', 'pw', 'Root') })
+    expect(mocks.signOut).not.toHaveBeenCalled()
+    expect(res).toEqual({ ok: true, status: 'approved' })
+  })
+
+  it('maps signup errors to a Persian message', async () => {
+    mocks.signUp.mockResolvedValue({ data: null, error: { message: 'User already registered' } })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    let res
+    await act(async () => { res = await ctx.signUp('a@b.c', 'pw', 'Ali') })
+    expect(res.error).toMatch(/ثبت شده/)
   })
 })

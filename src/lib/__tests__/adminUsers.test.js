@@ -59,7 +59,7 @@ vi.mock('../supabase.js', () => ({
 }))
 
 import { supabase } from '../supabase.js'
-import { createUserWithRestore, createUserErrorFa } from '../adminUsers.js'
+import { createUserWithRestore, createUserErrorFa, setMemberStatus } from '../adminUsers.js'
 
 const input = {
   email: 'new@gym.test',
@@ -111,7 +111,7 @@ describe('createUserWithRestore', () => {
     await createUserWithRestore(input)
     expect(m.order.indexOf('lookup')).toBeGreaterThan(m.order.indexOf('setSession'))
     expect(m.updateArgs).toEqual({
-      approved: true, role: 'member', weight_kg: 70, theme: 'sadeq', program_id: 'p1',
+      approved: true, status: 'approved', role: 'member', weight_kg: 70, theme: 'sadeq', program_id: 'p1',
     })
     expect(m.updateEq).toEqual(['id', 'new1'])
   })
@@ -145,5 +145,24 @@ describe('createUserErrorFa', () => {
   })
   it('maps weak password to Persian', () => {
     expect(createUserErrorFa({ message: 'Password should be at least 6 characters' })).toContain('۸ کاراکتر')
+  })
+})
+
+describe('setMemberStatus', () => {
+  it('approving sets status=approved and approved=true', async () => {
+    await setMemberStatus('u1', 'approved')
+    expect(m.updateArgs).toEqual({ status: 'approved', approved: true })
+    expect(m.updateEq).toEqual(['id', 'u1'])
+  })
+
+  it('rejecting sets status=rejected and approved=false', async () => {
+    await setMemberStatus('u1', 'rejected')
+    expect(m.updateArgs).toEqual({ status: 'rejected', approved: false })
+    expect(m.updateEq).toEqual(['id', 'u1'])
+  })
+
+  it('throws when the update fails', async () => {
+    m.updateRes = { error: { message: 'nope' } }
+    await expect(setMemberStatus('u1', 'approved')).rejects.toThrow()
   })
 })

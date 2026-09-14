@@ -12,11 +12,12 @@ const dateFmt = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short' })
 export function groupHistory(rows) {
   const map = new Map()
   ;(rows ?? []).forEach((r) => {
-    const name = r.item?.exercise?.name_fa
+    const name = r.item?.exercise?.name_fa || r.exercise_name
     if (!name) return
+    const sets = Number(r.item?.sets ?? r.sets) || 0
     const entry = map.get(name) || { name, seen: new Set(), sets: 0, last: '' }
     entry.seen.add(r.date)
-    entry.sets += Number(r.item.sets) || 0
+    entry.sets += sets
     if (r.date > entry.last) entry.last = r.date
     map.set(name, entry)
   })
@@ -28,7 +29,7 @@ export function groupHistory(rows) {
 async function fetchHistory(userId) {
   const from = localISO(new Date(Date.now() - RANGE_DAYS * DAY_MS))
   const { data, error } = await supabase.from('checks')
-    .select('date, kcal, item:program_items(sets, exercise:exercises(name_fa))')
+    .select('date, kcal, exercise_name, sets, item:program_items(sets, exercise:exercises(name_fa))')
     .eq('user_id', userId)
     .gte('date', from)
   if (error) throw error

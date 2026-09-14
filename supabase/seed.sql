@@ -1,6 +1,6 @@
 -- GYMBook — سید بانک حرکات و دو برنامه (Task 13)
 -- استخراج‌شده از public/legacy.html (WARM, COOL, WARM_G, COOL_G, DATA_SADEQ, DATA_SAGHAR).
--- یک‌بار در Supabase SQL Editor اجرا شود (بعد از 0001_init.sql).
+-- یک‌بار در Supabase SQL Editor اجرا شود (بعد از 0001_init.sql، 0002_auth_approval.sql و 0003_user_programs.sql).
 -- idempotent: اگر جدول programs پر باشد، سید رد می‌شود.
 
 do $$
@@ -287,202 +287,207 @@ begin
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'sat', 'شنبه', 'بازو', 'شنبه — بازو (جلوبازو و پشت‌بازو)', 'تمرکز روی جلوبازو و پشت‌بازو با دمبل. حرکات کاملاً آرام و بدون پرش.', 1)
   returning id into d_sat;
+  insert into program_sections (day_id, name, sort) values (d_sat, 'گرم‌کردن', 0), (d_sat, 'تمرین اصلی', 1), (d_sat, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'sun', 'یکشنبه', 'پشت', 'یکشنبه — پشت (زیربغل و کمر)', 'بارفیکس با کمک پا + حرکات دمبل. اگر بارفیکس کامل سخت است، حالت کمکی را انجام بده.', 2)
   returning id into d_sun;
+  insert into program_sections (day_id, name, sort) values (d_sun, 'گرم‌کردن', 0), (d_sun, 'تمرین اصلی', 1), (d_sun, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'mon', 'دوشنبه', 'سینه و باسن', 'دوشنبه — سینه و باسن', 'نیمه اول برای سینه، نیمه دوم برای عضلات باسن. همه حرکات کم‌فشار و روی زمین یا ایستاده.', 3)
   returning id into d_mon;
+  insert into program_sections (day_id, name, sort) values (d_mon, 'گرم‌کردن', 0), (d_mon, 'تمرین اصلی', 1), (d_mon, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'tue', 'سه‌شنبه', 'شکم و پهلو', 'سه‌شنبه — شکم و پهلو', 'سه حرکت برای شکم و سه حرکت برای پهلو. همه روی زمین و بدون پرش.', 4)
   returning id into d_tue;
+  insert into program_sections (day_id, name, sort) values (d_tue, 'گرم‌کردن', 0), (d_tue, 'تمرین اصلی', 1), (d_tue, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'wed', 'چهارشنبه', 'پا', 'چهارشنبه — پا', 'جلو ران، پشت ران و ساق با دمبل. بدون پرش و با دامنه راحت.', 5)
   returning id into d_wed;
+  insert into program_sections (day_id, name, sort) values (d_wed, 'گرم‌کردن', 0), (d_wed, 'تمرین اصلی', 1), (d_wed, 'سردکردن', 2);
   -- warm 1: چرخش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'warm', 1, 40, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 0), 1, 40, 0, 1);
   -- warm 2: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'warm', 1, 8, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 0), 1, 8, 0, 2);
   -- main 1: جلوبازو دمبل ایستاده
   select id into ex_id from exercises where name_en = 'Dumbbell Biceps Curl';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 12, 45, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 12, 45, 1);
   -- main 2: جلوبازو چکشی
   select id into ex_id from exercises where name_en = 'Dumbbell Hammer Curl';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 12, 45, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 12, 45, 2);
   -- main 3: جلوبازو تمرکزی نشسته
   select id into ex_id from exercises where name_en = 'Concentration Curl';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 2, 10, 45, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 2, 10, 45, 3);
   -- main 4: پشت‌بازو دمبل خم (کیک‌بک)
   select id into ex_id from exercises where name_en = 'Dumbbell Kickback';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 12, 45, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 12, 45, 4);
   -- main 5: پشت‌بازو بالای سر نشسته
   select id into ex_id from exercises where name_en = 'Seated Dumbbell Triceps Extension';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 10, 60, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 10, 60, 5);
   -- main 6: شراگ (بالا کشیدن شانه)
   select id into ex_id from exercises where name_en = 'Dumbbell Shrug';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 2, 15, 45, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 2, 15, 45, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 2), 1, 30, 0, 1);
   -- warm 1: چرخش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'warm', 1, 40, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 0), 1, 40, 0, 1);
   -- warm 2: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'warm', 1, 8, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 0), 1, 8, 0, 2);
   -- main 1: بارفیکس دست‌باز
   select id into ex_id from exercises where name_en = 'Pull Up';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 8, 60, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 8, 60, 1);
   -- main 2: بارفیکس دست‌جمع (کف دست به سمت خود)
   select id into ex_id from exercises where name_en = 'Chin Up';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 2, 6, 60, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 2, 6, 60, 2);
   -- main 3: زیربغل دمبل تک‌دست (پارویی)
   select id into ex_id from exercises where name_en = 'Dumbbell Row';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 12, 45, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 12, 45, 3);
   -- main 4: فلای معکوس دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Reverse Fly';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 12, 45, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 12, 45, 4);
   -- main 5: سوپرمن (تقویت کمر روی زمین)
   select id into ex_id from exercises where name_en = 'Superman';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 2, 12, 45, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 2, 12, 45, 5);
   -- main 6: پرنده-سگ (تعادل و کمر)
   select id into ex_id from exercises where name_en = 'Bird Dog';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 2, 10, 45, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 2, 10, 45, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 2), 1, 30, 0, 1);
   -- warm 1: چرخش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'warm', 1, 40, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 0), 1, 40, 0, 1);
   -- warm 2: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'warm', 1, 8, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 0), 1, 8, 0, 2);
   -- main 1: شنا (پوش‌آپ)
   select id into ex_id from exercises where name_en = 'Push Up';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 12, 45, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 12, 45, 1);
   -- main 2: پرس سینه دمبل روی زمین
   select id into ex_id from exercises where name_en = 'Dumbbell Press';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 12, 60, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 12, 60, 2);
   -- main 3: فلای سینه دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Fly';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 2, 12, 45, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 2, 12, 45, 3);
   -- main 4: پل باسن
   select id into ex_id from exercises where name_en = 'Glute Bridge';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 15, 45, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 15, 45, 4);
   -- main 5: هیپ تراست (باسن با تکیه بر تخت)
   select id into ex_id from exercises where name_en = 'Bodyweight Hip Thrust';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 12, 60, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 12, 60, 5);
   -- main 6: باز کردن پا به پهلو (ایستاده)
   select id into ex_id from exercises where name_en = 'Standing Hip Abduction';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 2, 15, 45, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 2, 15, 45, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 2), 1, 30, 0, 1);
   -- warm 1: چرخش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'warm', 1, 40, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 0), 1, 40, 0, 1);
   -- warm 2: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'warm', 1, 8, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 0), 1, 8, 0, 2);
   -- main 1: کرانچ (دراز و نشست کوتاه)
   select id into ex_id from exercises where name_en = 'Crunch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 3, 15, 45, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 3, 15, 45, 1);
   -- main 2: بالا آوردن پا خوابیده
   select id into ex_id from exercises where name_en = 'Lying Leg Raise';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 3, 12, 45, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 3, 12, 45, 2);
   -- main 3: پلانک (شکم ثابت)
   select id into ex_id from exercises where name_en = 'Plank';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 3, 40, 45, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 3, 40, 45, 3);
   -- main 4: باگ مرده (شکم عمیق)
   select id into ex_id from exercises where name_en = 'Dead Bug';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 2, 10, 45, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 2, 10, 45, 4);
   -- main 5: پلانک پهلو با خم شدن
   select id into ex_id from exercises where name_en = 'Side Plank Oblique Crunch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 2, 10, 45, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 2, 10, 45, 5);
   -- main 6: پل پهلو (پلانک پهلو ساده)
   select id into ex_id from exercises where name_en = 'Side Bridge';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 2, 20, 45, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 2, 20, 45, 6);
   -- main 7: خم شدن به پهلو با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Side Bend';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 2, 12, 45, 7);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 2, 12, 45, 7);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 2), 1, 30, 0, 1);
   -- warm 1: چرخش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'warm', 1, 40, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 0), 1, 40, 0, 1);
   -- warm 2: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'warm', 1, 8, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 0), 1, 8, 0, 2);
   -- main 1: اسکات با دمبل جلوی سینه
   select id into ex_id from exercises where name_en = 'Dumbbell Goblet Squat';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 3, 12, 60, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 3, 12, 60, 1);
   -- main 2: اسکات پا باز (سومو)
   select id into ex_id from exercises where name_en = 'Dumbbell Sumo Squat';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 3, 12, 60, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 3, 12, 60, 2);
   -- main 3: لانژ با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Lunge';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 3, 10, 60, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 3, 10, 60, 3);
   -- main 4: ددلیفت رومانیایی با دمبل (پشت ران)
   select id into ex_id from exercises where name_en = 'Dumbbell Romanian Deadlift';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 3, 12, 60, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 3, 12, 60, 4);
   -- main 5: ساق پا ایستاده با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Calf Raise';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 3, 15, 45, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 3, 15, 45, 5);
   -- main 6: ساق پا بدون وزنه
   select id into ex_id from exercises where name_en = 'Standing Calf Raise';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 2, 20, 30, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 2, 20, 30, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 2), 1, 30, 0, 1);
 
   ------------------------------------------------------------------
   -- برنامه «متابولیک — ساغر»
@@ -493,242 +498,247 @@ begin
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'sat', 'شنبه', 'تمام‌بدن', 'شنبه — سرکیت تمام‌بدن (چربی‌سوزی)', '۳ دور پشت‌سرهم با استراحت کوتاه. هدف: بالا نگه‌داشتن ضربان قلب و سوزاندن چربی با حفظ عضله.', 1)
   returning id into d_sat;
+  insert into program_sections (day_id, name, sort) values (d_sat, 'گرم‌کردن', 0), (d_sat, 'تمرین اصلی', 1), (d_sat, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'sun', 'یکشنبه', 'باسن و ران', 'یکشنبه — پایین‌تنه، باسن و ران', 'فرم‌دهی باسن و ران با دمبل و تکرار بالا، به‌علاوه یک فینیشر کراس‌فیتی. بدون حجیم شدن.', 2)
   returning id into d_sun;
+  insert into program_sections (day_id, name, sort) values (d_sun, 'گرم‌کردن', 0), (d_sun, 'تمرین اصلی', 1), (d_sun, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'mon', 'دوشنبه', 'بالاتنه', 'دوشنبه — بالاتنه، بازو و سرشانه', 'دمبل سبک با تکرار بالا + بارفیکس. هدف: بازوی کشیده و سفت و بالاتنه فرم‌گرفته، نه حجیم.', 3)
   returning id into d_mon;
+  insert into program_sections (day_id, name, sort) values (d_mon, 'گرم‌کردن', 0), (d_mon, 'تمرین اصلی', 1), (d_mon, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'tue', 'سه‌شنبه', 'HIIT و شکم', 'سه‌شنبه — HIIT کراس‌فیتی + شکم و پهلو', 'اینتروال ۴۰ ثانیه کار و ۲۰ ثانیه استراحت، سپس بخش شکم و پهلو. پرچربی‌سوزترین روز هفته.', 4)
   returning id into d_tue;
+  insert into program_sections (day_id, name, sort) values (d_tue, 'گرم‌کردن', 0), (d_tue, 'تمرین اصلی', 1), (d_tue, 'سردکردن', 2);
   insert into program_days (program_id, day_key, day_label, focus, title, sub, sort) values
     (p_id, 'wed', 'چهارشنبه', 'WOD کراس‌فیت', 'چهارشنبه — WOD کراس‌فیت با دمبل', 'تمرین روز به سبک کراس‌فیت: ۵ دور. حرکات هر دور را پشت‌سرهم انجام بده و فقط بین دورها ۶۰ ثانیه استراحت کن.', 5)
   returning id into d_wed;
+  insert into program_sections (day_id, name, sort) values (d_wed, 'گرم‌کردن', 0), (d_wed, 'تمرین اصلی', 1), (d_wed, 'سردکردن', 2);
   -- warm 1: پروانه (جامپینگ جک)
   select id into ex_id from exercises where name_en = 'Jumping Jack';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'warm', 1, 45, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 0), 1, 45, 0, 1);
   -- warm 2: کرم‌حرکت (اینچ‌ورم)
   select id into ex_id from exercises where name_en = 'Inchworm';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'warm', 1, 6, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 0), 1, 6, 0, 2);
   -- warm 3: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'warm', 1, 8, 0, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 0), 1, 8, 0, 3);
   -- main 1: اسکات دمبل جلوی سینه
   select id into ex_id from exercises where name_en = 'Dumbbell Goblet Squat';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 12, 30, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 12, 30, 1);
   -- main 2: پرس سرشانه ایستاده با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Shoulder Press';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 12, 30, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 12, 30, 2);
   -- main 3: پارویی خم با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Row';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 12, 30, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 12, 30, 3);
   -- main 4: کوهنوردی
   select id into ex_id from exercises where name_en = 'Mountain Climber';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 30, 30, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 30, 30, 4);
   -- main 5: برپی
   select id into ex_id from exercises where name_en = 'Burpees';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 8, 60, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 8, 60, 5);
   -- main 6: پلانک
   select id into ex_id from exercises where name_en = 'Plank';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'main', 3, 40, 45, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 1), 3, 40, 45, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 2), 1, 30, 0, 1);
   -- cool 2: کشش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sat, ex_id, 'cool', 1, 30, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sat, ex_id, (select id from program_sections where day_id = d_sat and sort = 2), 1, 30, 0, 2);
   -- warm 1: پروانه (جامپینگ جک)
   select id into ex_id from exercises where name_en = 'Jumping Jack';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'warm', 1, 45, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 0), 1, 45, 0, 1);
   -- warm 2: کرم‌حرکت (اینچ‌ورم)
   select id into ex_id from exercises where name_en = 'Inchworm';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'warm', 1, 6, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 0), 1, 6, 0, 2);
   -- warm 3: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'warm', 1, 8, 0, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 0), 1, 8, 0, 3);
   -- main 1: اسکات پا باز (سومو)
   select id into ex_id from exercises where name_en = 'Dumbbell Sumo Squat';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 15, 45, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 15, 45, 1);
   -- main 2: لانژ به عقب با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Reverse Lunge';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 12, 45, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 12, 45, 2);
   -- main 3: ددلیفت رومانیایی با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Romanian Deadlift';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 12, 45, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 12, 45, 3);
   -- main 4: پل باسن با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Glute Bridge';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 15, 45, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 15, 45, 4);
   -- main 5: اسکات کازاک
   select id into ex_id from exercises where name_en = 'Dumbbell Cossack Squat';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 2, 8, 45, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 2, 8, 45, 5);
   -- main 6: فینیشر: اسکات پرشی
   select id into ex_id from exercises where name_en = 'Jump Squat';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'main', 3, 15, 30, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 1), 3, 15, 30, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 2), 1, 30, 0, 1);
   -- cool 2: کشش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_sun, ex_id, 'cool', 1, 30, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_sun, ex_id, (select id from program_sections where day_id = d_sun and sort = 2), 1, 30, 0, 2);
   -- warm 1: پروانه (جامپینگ جک)
   select id into ex_id from exercises where name_en = 'Jumping Jack';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'warm', 1, 45, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 0), 1, 45, 0, 1);
   -- warm 2: کرم‌حرکت (اینچ‌ورم)
   select id into ex_id from exercises where name_en = 'Inchworm';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'warm', 1, 6, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 0), 1, 6, 0, 2);
   -- warm 3: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'warm', 1, 8, 0, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 0), 1, 8, 0, 3);
   -- main 1: شنا سوئدی (روی زانو هم مجاز است)
   select id into ex_id from exercises where name_en = 'Push Up';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 12, 45, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 12, 45, 1);
   -- main 2: بارفیکس کمکی یا منفی
   select id into ex_id from exercises where name_en = 'Pull Up';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 6, 60, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 6, 60, 2);
   -- main 3: نشر جانب با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Lateral Raise';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 15, 45, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 15, 45, 3);
   -- main 4: جلوبازو چکشی
   select id into ex_id from exercises where name_en = 'Dumbbell Hammer Curl';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 12, 45, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 12, 45, 4);
   -- main 5: پشت‌بازو بالای سر نشسته
   select id into ex_id from exercises where name_en = 'Seated Dumbbell Triceps Extension';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 3, 12, 45, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 3, 12, 45, 5);
   -- main 6: شنا با ضربه به شانه
   select id into ex_id from exercises where name_en = 'Shoulder Tap Push Up';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'main', 2, 10, 45, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 1), 2, 10, 45, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 2), 1, 30, 0, 1);
   -- cool 2: کشش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_mon, ex_id, 'cool', 1, 30, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_mon, ex_id, (select id from program_sections where day_id = d_mon and sort = 2), 1, 30, 0, 2);
   -- warm 1: پروانه (جامپینگ جک)
   select id into ex_id from exercises where name_en = 'Jumping Jack';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'warm', 1, 45, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 0), 1, 45, 0, 1);
   -- warm 2: کرم‌حرکت (اینچ‌ورم)
   select id into ex_id from exercises where name_en = 'Inchworm';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'warm', 1, 6, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 0), 1, 6, 0, 2);
   -- warm 3: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'warm', 1, 8, 0, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 0), 1, 8, 0, 3);
   -- main 1: پروانه (جامپینگ جک)
   select id into ex_id from exercises where name_en = 'Jumping Jack';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 4, 40, 20, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 4, 40, 20, 1);
   -- main 2: برپی
   select id into ex_id from exercises where name_en = 'Burpees';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 4, 40, 20, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 4, 40, 20, 2);
   -- main 3: کوهنوردی
   select id into ex_id from exercises where name_en = 'Mountain Climber';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 4, 40, 20, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 4, 40, 20, 3);
   -- main 4: اسکات پرشی جمع‌شونده
   select id into ex_id from exercises where name_en = 'Squat Tuck Jump';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 4, 30, 30, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 4, 30, 30, 4);
   -- main 5: کرانچ دوچرخه
   select id into ex_id from exercises where name_en = 'Bicycle Crunch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 3, 20, 45, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 3, 20, 45, 5);
   -- main 6: چرخش روسی
   select id into ex_id from exercises where name_en = 'Russian Twist';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 3, 20, 45, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 3, 20, 45, 6);
   -- main 7: پلانک پهلو
   select id into ex_id from exercises where name_en = 'Side Bridge';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'main', 2, 30, 30, 7);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 1), 2, 30, 30, 7);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 2), 1, 30, 0, 1);
   -- cool 2: کشش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_tue, ex_id, 'cool', 1, 30, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_tue, ex_id, (select id from program_sections where day_id = d_tue and sort = 2), 1, 30, 0, 2);
   -- warm 1: پروانه (جامپینگ جک)
   select id into ex_id from exercises where name_en = 'Jumping Jack';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'warm', 1, 45, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 0), 1, 45, 0, 1);
   -- warm 2: کرم‌حرکت (اینچ‌ورم)
   select id into ex_id from exercises where name_en = 'Inchworm';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'warm', 1, 6, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 0), 1, 6, 0, 2);
   -- warm 3: کشش گربه و گاو (نرمش کمر)
   select id into ex_id from exercises where name_en = 'Cat-Cow Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'warm', 1, 8, 0, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 0), 1, 8, 0, 3);
   -- main 1: پرس پایی با دمبل (تراستر)
   select id into ex_id from exercises where name_en = 'Dumbbell Push Press';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 5, 10, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 5, 10, 0, 1);
   -- main 2: یک‌ضرب دمبل تک‌دست
   select id into ex_id from exercises where name_en = 'One Arm Dumbbell Snatch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 5, 6, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 5, 6, 0, 2);
   -- main 3: پارویی رنیگید (پلانک + پارویی)
   select id into ex_id from exercises where name_en = 'Dumbbell Renegade Row';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 5, 8, 0, 3);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 5, 8, 0, 3);
   -- main 4: بالا رفتن روی چهارپایه با دمبل
   select id into ex_id from exercises where name_en = 'Dumbbell Step Up';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 5, 8, 0, 4);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 5, 8, 0, 4);
   -- main 5: برپی
   select id into ex_id from exercises where name_en = 'Burpees';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 5, 6, 60, 5);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 5, 6, 60, 5);
   -- main 6: پلانک پایانی
   select id into ex_id from exercises where name_en = 'Plank';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'main', 1, 60, 0, 6);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 1), 1, 60, 0, 6);
   -- cool 1: کشش پشت ران ایستاده
   select id into ex_id from exercises where name_en = 'Standing Hamstring Stretch';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'cool', 1, 30, 0, 1);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 2), 1, 30, 0, 1);
   -- cool 2: کشش شانه و بازو
   select id into ex_id from exercises where name_en = 'Arm Circles';
-  insert into program_items (day_id, exercise_id, section, sets, reps, rest_sec, sort) values
-    (d_wed, ex_id, 'cool', 1, 30, 0, 2);
+  insert into program_items (day_id, exercise_id, section_id, sets, reps, rest_sec, sort) values
+    (d_wed, ex_id, (select id from program_sections where day_id = d_wed and sort = 2), 1, 30, 0, 2);
 
   ------------------------------------------------------------------
   -- خلاصه: 2 برنامه، 10 روز، 102 آیتم، 52 حرکت

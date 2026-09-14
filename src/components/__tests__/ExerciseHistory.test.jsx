@@ -26,6 +26,14 @@ describe('groupHistory', () => {
     const rows = groupHistory([{ date: '2026-09-12', kcal: 5, item: null }])
     expect(rows).toEqual([])
   })
+
+  it('uses snapshot name/sets when the program item was deleted', () => {
+    const rows = groupHistory([
+      { date: '2026-09-01', item_id: null, exercise_name: 'پرس سینه', sets: 4, item: null },
+      { date: '2026-09-02', item_id: null, exercise_name: 'پرس سینه', sets: 4, item: null },
+    ])
+    expect(rows).toEqual([{ name: 'پرس سینه', sessions: 2, sets: 8, last: '2026-09-02' }])
+  })
 })
 
 const gteMock = vi.hoisted(() => vi.fn())

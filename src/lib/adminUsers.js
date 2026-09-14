@@ -36,7 +36,7 @@ export async function createUserWithRestore({ email, password, name, role, weigh
     if (!prof) throw new Error('profile-not-found')
 
     const { error: upErr } = await supabase.from('profiles').update({
-      approved: true, role, weight_kg: weightKg, theme, program_id: programId,
+      approved: true, status: 'approved', role, weight_kg: weightKg, theme, program_id: programId,
     }).eq('id', prof.id)
     if (upErr) throw upErr
     return prof.id
@@ -57,4 +57,11 @@ export function createUserErrorFa(err) {
   if (msg === 'profile-not-found') return 'پروفایل کاربر تازه ساخته نشد — لطفاً صفحه را تازه‌سازی کنید'
   if (msg === 'no-admin-session') return 'نشست ادمین نامعتبر است — دوباره وارد شوید'
   return 'خطا در ساخت کاربر'
+}
+
+export async function setMemberStatus(id, status) {
+  const { error } = await supabase.from('profiles')
+    .update({ status, approved: status === 'approved' })
+    .eq('id', id)
+  if (error) throw error
 }
