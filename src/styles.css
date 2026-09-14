@@ -130,3 +130,20 @@ body[data-theme="saghar"] .timerbar button.main{background:linear-gradient(135de
 .summary-card{flex:1 1 140px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center}
 .summary-card b{display:block;font-size:19px;color:var(--acc)}
 .summary-card span{font-size:12px;color:var(--muted)}
+
+/* ---- Program builder (Task 12) ---- */
+.pb-list{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.pb-new{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.pb-new label{display:block;color:var(--muted);font-size:13.5px}
+.pb-new input{padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit;margin-top:4px}
+.pb-dayhead{margin-top:12px}
+.pb-dayfields{display:grid;gap:8px}
+.pb-dayfields input{width:100%;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit;margin-top:4px}
+.pb-col{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.pb-item{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px;
+  background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.pb-item-name{flex:1 1 100%;font-weight:800}
+.pb-item label{display:flex;flex-direction:column;font-size:11.5px;color:var(--muted)}
+.pb-item input,.pb-item select{width:76px;padding:6px;border-radius:8px;border:1px solid var(--line);
+  background:var(--bg);color:var(--txt);font-family:inherit}
+.pb-col select{padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit;margin-top:6px}
