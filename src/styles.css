@@ -108,3 +108,25 @@ body[data-theme="saghar"] .timerbar button.main{background:linear-gradient(135de
 .profile-card .hint{font-size:12px;margin:6px 0 0}
 .profile-card .btn.primary{margin-top:12px}
 .ok{color:var(--ok)}
+
+/* ---- Report (Task 8) ---- */
+.report-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.report-head h2{margin:0;font-size:17px}
+.report-nav{display:flex;gap:6px}
+.report-nav button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);cursor:pointer;font-size:15px;line-height:1}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-head span{text-align:center;font-size:11.5px;font-weight:800;color:var(--muted)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{min-height:52px;border-radius:10px;border:1px solid var(--line);background:var(--card2);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px}
+.cal-cell.empty{border-style:dashed;background:transparent;opacity:.4}
+.cal-cell.full{background:#152a24;border-color:var(--ok)}
+.cal-cell.partial{background:rgba(34,197,94,.14);border-color:#1c4532}
+.cal-cell.today{outline:2px solid var(--acc)}
+.cal-day{font-weight:800}
+.cal-bar{width:80%;height:4px;border-radius:999px;background:#0b1222;overflow:hidden}
+.cal-bar i{display:block;height:100%;background:var(--ok)}
+.cal-kcal{font-size:9.5px;color:var(--muted);direction:ltr}
+.summary-cards{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.summary-card{flex:1 1 140px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center}
+.summary-card b{display:block;font-size:19px;color:var(--acc)}
+.summary-card span{font-size:12px;color:var(--muted)}
