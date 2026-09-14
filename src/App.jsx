@@ -7,7 +7,7 @@ import AdminOnly from './components/AdminOnly.jsx'
 import Today from './pages/Today.jsx'
 import Report from './pages/Report.jsx'
 import Profile from './pages/Profile.jsx'
-import AdminRoutes from './pages/AdminRoutes.jsx'
+import AdminRoutes from './pages/admin/AdminRoutes.jsx'
 
 export default function App() {
   return (
