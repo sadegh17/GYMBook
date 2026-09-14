@@ -45,10 +45,20 @@ describe('Layout', () => {
     expect(screen.getByText('پنل ادمین')).toBeTruthy()
   })
 
-  it('sets body.dataset.theme from profile.theme', () => {
-    auth.profile = { id: 'u1', name: 'Ali', role: 'member', theme: 'light', approved: true }
+  it('sets body.dataset.theme from a known profile theme', () => {
+    auth.profile = { id: 'u1', name: 'Ali', role: 'member', theme: 'saghar', approved: true }
     render(<MemoryRouter><Layout><div>c</div></Layout></MemoryRouter>)
-    expect(document.body.dataset.theme).toBe('light')
+    expect(document.body.dataset.theme).toBe('saghar')
+  })
+
+  it('falls back to "sadeq" for unknown or missing theme', () => {
+    auth.profile = { id: 'u1', name: 'Ali', role: 'member', theme: 'neon', approved: true }
+    const { unmount } = render(<MemoryRouter><Layout><div>c</div></Layout></MemoryRouter>)
+    expect(document.body.dataset.theme).toBe('sadeq')
+    unmount()
+    auth.profile = { id: 'u1', name: 'Ali', role: 'member', approved: true }
+    render(<MemoryRouter><Layout><div>c</div></Layout></MemoryRouter>)
+    expect(document.body.dataset.theme).toBe('sadeq')
   })
 
   it('has a sign-out button that calls signOut', () => {

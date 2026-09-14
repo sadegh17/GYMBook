@@ -2,11 +2,13 @@ import React, { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth.jsx'
 
+const THEMES = ['sadeq', 'saghar']
+
 export default function Layout({ children }) {
   const { profile, signOut } = useAuth()
 
   useEffect(() => {
-    document.body.dataset.theme = profile?.theme || 'default'
+    document.body.dataset.theme = THEMES.includes(profile?.theme) ? profile.theme : 'sadeq'
   }, [profile?.theme])
 
   return (

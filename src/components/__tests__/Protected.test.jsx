@@ -97,4 +97,37 @@ describe('Protected', () => {
     renderAt()
     expect(screen.getByText('secret-content')).toBeTruthy()
   })
+
+  it('stops auto-retrying after 10 attempts and shows a manual-retry error', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    auth.session = { user: { id: 'u1' } }
+    auth.profile = null
+    auth.loading = false
+    renderAt()
+    await vi.advanceTimersByTimeAsync(2000 * 10)
+    expect(auth.refresh).toHaveBeenCalledTimes(10)
+    expect(screen.getByText('خطا در دریافت پروفایل — لطفاً دوباره تلاش کنید')).toBeTruthy()
+    const manualBtn = screen.getByText('تلاش مجدد')
+    await vi.advanceTimersByTimeAsync(20000)
+    expect(auth.refresh).toHaveBeenCalledTimes(10)
+    expect(screen.getByText('تلاش مجدد')).toBeTruthy()
+    expect(manualBtn).toBeTruthy()
+    vi.useRealTimers()
+  })
+
+  it('manual retry button resets the counter and restarts fetching', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    auth.session = { user: { id: 'u1' } }
+    auth.profile = null
+    auth.loading = false
+    renderAt()
+    await vi.advanceTimersByTimeAsync(2000 * 10)
+    expect(auth.refresh).toHaveBeenCalledTimes(10)
+    fireEvent.click(screen.getByText('تلاش مجدد'))
+    expect(auth.refresh).toHaveBeenCalledTimes(11)
+    expect(screen.queryByText('خطا در دریافت پروفایل — لطفاً دوباره تلاش کنید')).toBeNull()
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(auth.refresh).toHaveBeenCalledTimes(12)
+    vi.useRealTimers()
+  })
 })

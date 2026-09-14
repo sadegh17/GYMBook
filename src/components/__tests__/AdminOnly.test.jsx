@@ -12,6 +12,16 @@ vi.mock('../../lib/auth.jsx', () => ({ useAuth: () => auth }))
 
 import AdminOnly from '../AdminOnly.jsx'
 
+beforeEach(() => {
+  auth.session = null
+  auth.profile = null
+  auth.loading = false
+  auth.signIn.mockReset()
+  auth.signUp.mockReset()
+  auth.signOut.mockReset()
+  auth.refresh.mockReset()
+})
+
 describe('AdminOnly', () => {
   it('redirects to / when profile is missing or not admin', () => {
     render(
