@@ -4,6 +4,8 @@ import { useAuth } from '../lib/auth.jsx'
 import { supabase } from '../lib/supabase.js'
 import { fa, computeStreak, bestStreak, localISO } from '../lib/calc.js'
 import MonthCalendar from '../components/MonthCalendar.jsx'
+import WeekChart from '../components/WeekChart.jsx'
+import ExerciseHistory from '../components/ExerciseHistory.jsx'
 
 const pad2 = (n) => String(n).padStart(2, '0')
 const firstOfMonth = (y, m) => `${y}-${pad2(m + 1)}-01`
@@ -17,9 +19,24 @@ async function fetchMonthProgress(userId, year, month) {
   return data
 }
 
-async function fetchCheckDates(userId) {
-  const { data, error } = await supabase.from('checks')
-    .select('date').eq('user_id', userId).order('date')
+const WEEK_RANGE_DAYS = 28
+
+async function fetchWeekProgress(userId) {
+  const today = localISO()
+  const dt = new Date(today + 'T00:00:00Z')
+  dt.setUTCDate(dt.getUTCDate() - WEEK_RANGE_DAYS - 7)
+  const from = dt.toISOString().slice(0, 10)
+  const { data, error } = await supabase.from('v_day_progress')
+    .select('*').eq('user_id', userId)
+    .gte('date', from).lte('date', today)
+  if (error) throw error
+  return data
+}
+
+async function fetchTrainedDates(userId) {
+  // Streak membership: main_done > 0 only — a warmup-only tick must not extend the streak.
+  const { data, error } = await supabase.from('v_day_progress')
+    .select('date, main_done').eq('user_id', userId).gt('main_done', 0).order('date')
   if (error) throw error
   return data
 }
@@ -34,9 +51,14 @@ export default function Report() {
     queryFn: () => fetchMonthProgress(profile.id, view.y, view.m),
     enabled: !!profile?.id,
   })
-  const checksQuery = useQuery({
-    queryKey: ['check-dates', profile?.id],
-    queryFn: () => fetchCheckDates(profile.id),
+  const trainedQuery = useQuery({
+    queryKey: ['trained-dates', profile?.id],
+    queryFn: () => fetchTrainedDates(profile.id),
+    enabled: !!profile?.id,
+  })
+  const weeksQuery = useQuery({
+    queryKey: ['weeks', profile?.id],
+    queryFn: () => fetchWeekProgress(profile.id),
     enabled: !!profile?.id,
   })
 
@@ -49,7 +71,7 @@ export default function Report() {
   const rows = useMemo(() => progressQuery.data ?? [], [progressQuery.data])
 
   const { currentStreak, best, monthKcal, daysTrained } = useMemo(() => {
-    const dates = new Set((checksQuery.data ?? []).map((c) => c.date))
+    const dates = new Set((trainedQuery.data ?? []).map((c) => c.date))
     const kcal = rows.reduce((s, r) => s + (Number(r.kcal) || 0), 0)
     const trained = rows.filter((r) => (Number(r.main_done) || 0) > 0).length
     return {
@@ -58,7 +80,7 @@ export default function Report() {
       monthKcal: kcal,
       daysTrained: trained,
     }
-  }, [checksQuery.data, rows, today])
+  }, [trainedQuery.data, rows, today])
 
   const title = new Intl.DateTimeFormat('fa-IR', { month: 'long', year: 'numeric' })
     .format(new Date(view.y, view.m, 15))
@@ -110,7 +132,9 @@ export default function Report() {
         </div>
       </div>
 
-      {/* Task 9: WeekChart and ExerciseHistory mount here */}
+      {/* Task 9 */}
+      <WeekChart rows={weeksQuery.data ?? []} today={today} />
+      <ExerciseHistory />
     </div>
   )
 }
