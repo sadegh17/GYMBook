@@ -27,6 +27,9 @@ export default function Layout({ children }) {
         </nav>
       </header>
       <main className="wrap">{children !== undefined ? children : <Outlet />}</main>
+      <footer className="wrap foot">
+        <a href="/GYMBook/legacy.html" target="_self">نسخه ساده قدیمی</a>
+      </footer>
     </>
   )
 }

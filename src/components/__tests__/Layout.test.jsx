@@ -67,4 +67,11 @@ describe('Layout', () => {
     fireEvent.click(screen.getByText('خروج'))
     expect(auth.signOut).toHaveBeenCalledTimes(1)
   })
+
+  it('links to the legacy simple version', () => {
+    auth.profile = { id: 'u1', name: 'Ali', role: 'member', theme: 'dark', approved: true }
+    render(<MemoryRouter><Layout><div>c</div></Layout></MemoryRouter>)
+    const link = screen.getByText('نسخه ساده قدیمی')
+    expect(link.getAttribute('href')).toBe('/GYMBook/legacy.html')
+  })
 })
