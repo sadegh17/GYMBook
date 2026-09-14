@@ -1,6 +1,6 @@
 -- GYMBook — سید بانک حرکات و دو برنامه (Task 13)
 -- استخراج‌شده از public/legacy.html (WARM, COOL, WARM_G, COOL_G, DATA_SADEQ, DATA_SAGHAR).
--- یک‌بار در Supabase SQL Editor اجرا شود (بعد از 0001_init.sql).
+-- یک‌بار در Supabase SQL Editor اجرا شود (بعد از 0001_init.sql، 0002_auth_approval.sql و 0003_user_programs.sql).
 -- idempotent: اگر جدول programs پر باشد، سید رد می‌شود.
 
 do $$

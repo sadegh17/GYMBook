@@ -1,7 +1,8 @@
--- GYMBook — مهاجرت ۰۰۰۲: برنامه‌های شخصی کاربر
--- یک‌بار در SQL Editor اجرا شود (بعد از 0001_init.sql). هرگز دوباره اجرا نکنید.
--- پیش‌نیاز: اجرای این مهاجرت روی دیتابیس موجود، داده‌های برنامه‌های ادمین را
--- به مدل جدید (بخش‌های با نام دلخواه) نگاشت می‌کند.
+-- GYMBook — مهاجرت ۰۰۰۳: برنامه‌های شخصی کاربر
+-- یک‌بار در SQL Editor اجرا شود (بعد از 0002_auth_approval.sql). هرگز دوباره اجرا نکنید.
+-- این مهاجرت با ۰۰۰۲ (تأیید حساب) هماهنگ است: همهٔ policyهای خواندن/نوشتنِ برنامه
+-- هم «دروازهٔ تأیید» (is_approved) و هم «مالکیت» را با هم رعایت می‌کنند.
+-- پیش‌نیاز: اجرای موفق ۰۰۰۱ و ۰۰۰۲. دادهٔ موجود برنامه‌ها خودکار نگاشت می‌شود.
 
 -- 1) programs: مالکیت + حذف نرم
 alter table public.programs
@@ -70,19 +71,32 @@ alter table public.checks
   add constraint checks_item_id_fkey
   foreign key (item_id) references public.program_items(id) on delete set null;
 
--- 6) توابع کمک‌دسترسی
+-- 6) توابع کمک‌دسترسی (is_approved() و is_admin() از مهاجرت‌های قبل موجودند)
 create or replace function public.can_write_program(pid uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.programs
-    where id = pid and (owner_id = auth.uid() or public.is_admin()))
+    where id = pid and (public.is_admin() or (owner_id = auth.uid() and public.is_approved())))
 $$;
 create or replace function public.can_write_day(did uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.program_days d
     where d.id = did and public.can_write_program(d.program_id))
 $$;
+create or replace function public.can_read_program(pid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.programs
+    where id = pid and is_deleted = false
+      and (public.is_admin() or owner_id is null or owner_id = auth.uid()))
+$$;
+create or replace function public.can_read_day(did uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.program_days d
+    where d.id = did and public.can_read_program(d.program_id))
+$$;
 grant execute on function public.can_write_program(uuid) to authenticated;
 grant execute on function public.can_write_day(uuid) to authenticated;
+grant execute on function public.can_read_program(uuid) to authenticated;
+grant execute on function public.can_read_day(uuid) to authenticated;
 
 -- 7) تریگر سقف ۳ برنامه (فقط برنامه شخصی؛ ادمین/سراسری مستثنی)
 create or replace function public.enforce_program_limit() returns trigger
@@ -103,42 +117,58 @@ end $$;
 create trigger programs_limit_before_insert before insert on public.programs
   for each row execute function public.enforce_program_limit();
 
--- 8) RLS — programs
+-- 8) RLS — programs (خواندن = تأیید + دیده‌شدنِ مالک/سراسری؛ نوشتن = مالک تأییدشده یا ادمین)
 drop policy if exists "programs: read authed" on public.programs;
+drop policy if exists "programs: read approved" on public.programs;
+drop policy if exists "programs: read visible" on public.programs;
 drop policy if exists "programs: admin write" on public.programs;
 drop policy if exists "programs: admin update" on public.programs;
 drop policy if exists "programs: admin delete" on public.programs;
-create policy "programs: read visible" on public.programs
-  for select to authenticated using (is_deleted = false
-    and (owner_id is null or owner_id = auth.uid() or public.is_admin()));
-create policy "programs: owner or admin insert" on public.programs
-  for insert to authenticated with check (owner_id = auth.uid() or public.is_admin());
-create policy "programs: owner or admin update" on public.programs
+drop policy if exists "programs: owner or admin insert" on public.programs;
+drop policy if exists "programs: owner or admin update" on public.programs;
+create policy "programs: read" on public.programs
+  for select to authenticated using (public.is_approved() and public.can_read_program(id));
+create policy "programs: insert" on public.programs
+  for insert to authenticated with check (public.is_admin() or (owner_id = auth.uid() and public.is_approved()));
+create policy "programs: update" on public.programs
   for update to authenticated using (public.can_write_program(id))
   with check (public.can_write_program(id));
-create policy "programs: admin delete" on public.programs
+create policy "programs: delete" on public.programs
   for delete to authenticated using (public.is_admin());
 
 -- 9) RLS — program_sections
 alter table public.program_sections enable row level security;
-create policy "sections: read authed" on public.program_sections
-  for select to authenticated using (true);
-create policy "sections: owner write" on public.program_sections
+drop policy if exists "sections: read authed" on public.program_sections;
+drop policy if exists "sections: owner write" on public.program_sections;
+create policy "sections: read" on public.program_sections
+  for select to authenticated using (public.is_approved() and public.can_read_day(day_id));
+create policy "sections: write" on public.program_sections
   for all to authenticated using (public.can_write_day(day_id))
   with check (public.can_write_day(day_id));
 
--- 10) RLS — program_days / program_items: نوشتن برای مالک برنامه یا ادمین
+-- 10) RLS — program_days / program_items: خواندن تأیید+دید، نوشتن مالک/ادمین
+drop policy if exists "days: read authed" on public.program_days;
+drop policy if exists "days: read approved" on public.program_days;
 drop policy if exists "days: admin write" on public.program_days;
-create policy "days: owner write" on public.program_days
+drop policy if exists "days: owner write" on public.program_days;
+create policy "days: read" on public.program_days
+  for select to authenticated using (public.is_approved() and public.can_read_program(program_id));
+create policy "days: write" on public.program_days
   for all to authenticated using (public.can_write_program(program_id))
   with check (public.can_write_program(program_id));
 
+drop policy if exists "items: read authed" on public.program_items;
+drop policy if exists "items: read approved" on public.program_items;
 drop policy if exists "items: admin write" on public.program_items;
-create policy "items: owner write" on public.program_items
+drop policy if exists "items: owner write" on public.program_items;
+create policy "items: read" on public.program_items
+  for select to authenticated using (public.is_approved() and public.can_read_day(day_id));
+create policy "items: write" on public.program_items
   for all to authenticated using (public.can_write_day(day_id))
   with check (public.can_write_day(day_id));
 
--- 11) RLS — profiles: شل‌کردن program_id تا کاربر برنامه پیش‌فرضش را عوض کند
+-- 11) RLS — profiles: خود-بروزرسانی، lockهای ۰۰۰۲ (status/approved/role/email) حفظ شد
+--     و فقط تغییر program_id به برنامهٔ قابل‌دیده (سراسری یا مالک خود) مجاز شد.
 drop policy if exists "profiles: self update";
 create policy "profiles: self update" on public.profiles
   for update to authenticated using (id = auth.uid())
@@ -146,6 +176,7 @@ create policy "profiles: self update" on public.profiles
     id = auth.uid()
     and role = (select p.role from public.profiles p where p.id = auth.uid())
     and approved = (select p.approved from public.profiles p where p.id = auth.uid())
+    and status = (select p.status from public.profiles p where p.id = auth.uid())
     and email = (select p.email from public.profiles p where p.id = auth.uid())
     and (
       program_id is not distinct from (select p.program_id from public.profiles p where p.id = auth.uid())
