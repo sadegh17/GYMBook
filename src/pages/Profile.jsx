@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/auth.jsx'
@@ -10,11 +10,32 @@ export function validateWeight(v) {
   return 'وزن باید بین ۲۰ تا ۲۵۰ کیلوگرم باشد'
 }
 
+function useAutoHide(msg, setMsg, ms = 4000) {
+  useEffect(() => {
+    if (!msg) return
+    const t = setTimeout(() => setMsg(''), ms)
+    return () => clearTimeout(t)
+  }, [msg])
+}
+
+function Field({ id, label, hint, hintClass, error, children }) {
+  return (
+    <div className="field">
+      <label className="lbl" htmlFor={id}>{label}</label>
+      {children}
+      {error
+        ? <p id={`${id}-error`} className="ferr" role="alert">{error}</p>
+        : hint ? <p id={`${id}-hint`} className={hintClass || 'hint'}>{hint}</p> : null}
+    </div>
+  )
+}
+
 export default function Profile() {
   const { profile, refresh } = useAuth()
   const qc = useQueryClient()
   const [name, setName] = useState(profile?.name ?? '')
-  const [weight, setWeight] = useState(profile?.weight_kg ?? '')
+  const [weight, setWeight] = useState(String(profile?.weight_kg ?? ''))
+  const [nameErr, setNameErr] = useState('')
   const [weightErr, setWeightErr] = useState('')
   const [profileMsg, setProfileMsg] = useState('')
   const [profileErr, setProfileErr] = useState('')
@@ -26,12 +47,23 @@ export default function Profile() {
   const [pwErr, setPwErr] = useState('')
   const [pwBusy, setPwBusy] = useState(false)
 
+  useAutoHide(profileMsg, setProfileMsg)
+  useAutoHide(pwMsg, setPwMsg)
+
+  const profileDirty =
+    name !== (profile?.name ?? '') ||
+    String(Number(weight)) !== String(Number(profile?.weight_kg))
+  const pwDirty = pw !== '' && pw2 !== ''
+  const matchState = pw2 === '' || pw !== pw2 ? null : (pw.length >= 8 ? 'ok' : 'short')
+
   const saveProfile = async (e) => {
     e.preventDefault()
-    setProfileMsg(''); setProfileErr('')
+    setProfileMsg(''); setProfileErr(''); setNameErr(''); setWeightErr('')
+    let bad = false
+    if (!name.trim()) { setNameErr('نام نمی‌تواند خالی باشد'); bad = true }
     const err = validateWeight(weight)
-    if (err) { setWeightErr(err); return }
-    setWeightErr('')
+    if (err) { setWeightErr(err); bad = true }
+    if (bad) return
     setBusy(true)
     const { error } = await supabase.from('profiles')
       .update({ name, weight_kg: Number(weight) })
@@ -63,34 +95,69 @@ export default function Profile() {
     <div className="wrap">
       <div className="profile-card card">
         <h2>پروفایل</h2>
+        <p className="desc">نام و وزن شما در محاسبه کالری حرکات استفاده می‌شود.</p>
         <form onSubmit={saveProfile} noValidate>
-          <label>نام
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-          </label>
-          <label>وزن (کیلوگرم)
-            <input type="number" step="0.1" min="20" max="250"
-              value={weight} onChange={(e) => setWeight(e.target.value)} required />
-          </label>
-          <p className="muted hint">مجاز بین {fa('20')} تا {fa('250')} کیلوگرم</p>
-          {weightErr && <p className="err" role="alert">{weightErr}</p>}
-          {profileMsg && <p className="ok" role="status">{profileMsg}</p>}
-          {profileErr && <p className="err" role="alert">{profileErr}</p>}
-          <button type="submit" className="btn primary" disabled={busy}>ذخیره پروفایل</button>
+          <Field id="name" label="نام" error={nameErr}>
+            <input
+              id="name" type="text" value={name} maxLength={40}
+              onChange={(e) => setName(e.target.value)}
+              aria-invalid={nameErr ? 'true' : undefined}
+              aria-describedby={nameErr ? 'name-error' : undefined}
+            />
+          </Field>
+          <Field id="weight" label="وزن (کیلوگرم)"
+            hint={`مجاز بین ${fa('20')} تا ${fa('250')} کیلوگرم`} error={weightErr}>
+            <input
+              id="weight" type="number" step="0.1" min="20" max="250" inputMode="decimal"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              aria-invalid={weightErr ? 'true' : undefined}
+              aria-describedby={weightErr ? 'weight-error' : 'weight-hint'}
+            />
+          </Field>
+          <div className="form-actions">
+            <button type="submit" className="btn primary"
+              disabled={busy || !profileDirty}>
+              {busy ? 'در حال ذخیره…' : 'ذخیره پروفایل'}
+            </button>
+            {profileMsg && <span className="ok" role="status">{profileMsg}</span>}
+            {profileErr && <span className="err" role="alert">{profileErr}</span>}
+          </div>
         </form>
       </div>
 
       <div className="profile-card card">
         <h2>تغییر رمز عبور</h2>
+        <p className="desc">رمز جدید باید حداقل {fa('8')} کاراکتر باشد.</p>
         <form onSubmit={savePassword}>
-          <label>رمز عبور جدید
-            <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} required />
-          </label>
-          <label>تکرار رمز عبور
-            <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} required />
-          </label>
-          {pwErr && <p className="err" role="alert">{pwErr}</p>}
-          {pwMsg && <p className="ok" role="status">{pwMsg}</p>}
-          <button type="submit" className="btn primary" disabled={pwBusy}>تغییر رمز</button>
+          <Field id="pw" label="رمز عبور جدید">
+            <input
+              id="pw" type="password" autoComplete="new-password" value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              aria-describedby="pw-hint"
+            />
+          </Field>
+          <Field id="pw2" label="تکرار رمز عبور"
+            hint={matchState === 'ok' ? '✓ یکسان'
+              : matchState === 'short' ? 'کوتاه‌تر از ۸ کاراکتر'
+              : pw2 !== '' && pw !== pw2 ? '✗ یکسان نیست' : null}
+            hintClass={matchState === 'ok' ? 'match good'
+              : matchState === 'short' ? 'match warn'
+              : pw2 !== '' && pw !== pw2 ? 'match bad' : ''}>
+            <input
+              id="pw2" type="password" autoComplete="new-password" value={pw2}
+              onChange={(e) => setPw2(e.target.value)}
+              aria-describedby="pw2-hint"
+            />
+          </Field>
+          <div className="form-actions">
+            <button type="submit" className="btn primary"
+              disabled={pwBusy || !pwDirty}>
+              {pwBusy ? 'در حال ذخیره…' : 'تغییر رمز'}
+            </button>
+            {pwMsg && <span className="ok" role="status">{pwMsg}</span>}
+            {pwErr && <span className="err" role="alert">{pwErr}</span>}
+          </div>
         </form>
       </div>
     </div>
