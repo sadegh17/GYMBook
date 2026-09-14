@@ -240,6 +240,7 @@ create table public.programs (
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
+  email text,
   role text not null default 'member' check (role in ('admin','member')),
   weight_kg numeric not null default 70,
   program_id uuid references public.programs(id),
@@ -295,14 +296,22 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 $$;
 
+-- آیا هنوز هیچ کاربری نیست؟ (برای صفحه ورود — به anon هم مجاز)
+create or replace function public.setup_needed() returns boolean
+language sql stable security definer set search_path = public as $$
+  select not exists (select 1 from public.profiles)
+$$;
+grant execute on function public.setup_needed() to anon, authenticated;
+
 -- اولین اکانت = ادمین؛ بقیه member در انتظار تایید
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, name, role, approved)
+  insert into public.profiles (id, name, email, role, approved)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'name', split_part(new.email,'@',1)),
+    new.email,
     case when (select count(*) from public.profiles) = 0 then 'admin' else 'member' end,
     (select count(*) from public.profiles) = 0
   );
@@ -312,7 +321,8 @@ create trigger on_auth_user_created after insert on auth.users
 for each row execute function public.handle_new_user();
 
 -- درصد پیشرفت و کالری هر روز (پایه صفحه گزارش)
-create view public.v_day_progress as
+-- security_invoker: بامجوز فراخوان اجرا می‌شود تا RLS جدول checks اعمال شود
+create view public.v_day_progress with (security_invoker = true) as
 select c.user_id, c.date, c.day_key,
   count(*) filter (where i.section = 'main') as main_done,
   coalesce(sum(c.kcal), 0) as kcal,
@@ -330,15 +340,18 @@ alter table public.programs enable row level security;
 alter table public.program_days enable row level security;
 alter table public.program_items enable row level security;
 alter table public.checks enable row level security;
-alter table public.v_day_progress enable row level security;
--- view با احراز هویت caller اجرا می‌شود تا فیلتر user_id در پالیسی کار کند
-alter function public.is_admin() set search_path = public;
 
-create policy "profiles: self read/write" on public.profiles
+create policy "profiles: self read" on public.profiles
   for select to authenticated using (id = auth.uid() or public.is_admin());
 create policy "profiles: self update" on public.profiles
   for update to authenticated using (id = auth.uid())
-  with check (id = auth.uid() and role = (select p.role from public.profiles p where p.id = auth.uid()));
+  with check (
+    id = auth.uid()
+    and role = (select p.role from public.profiles p where p.id = auth.uid())
+    and approved = (select p.approved from public.profiles p where p.id = auth.uid())
+    and email = (select p.email from public.profiles p where p.id = auth.uid())
+    and program_id is not distinct from (select p.program_id from public.profiles p where p.id = auth.uid())
+  );
 create policy "profiles: admin manages" on public.profiles
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
@@ -370,9 +383,6 @@ create policy "checks: own insert" on public.checks
   for insert to authenticated with check (user_id = auth.uid());
 create policy "checks: own delete" on public.checks
   for delete to authenticated using (user_id = auth.uid());
-
-create policy "progress: own or admin" on public.v_day_progress
-  for select to authenticated using (user_id = auth.uid() or public.is_admin());
 ```
 
 - [ ] **Step 2: اجرای مهاجرت در داشبورد**
@@ -460,15 +470,7 @@ export function AuthProvider({ children }) {
 
 - [ ] **Step 3: `src/pages/Login.jsx`**
 
-فرم دو حالتی «ورود / ساخت اکانت اول»: input ایمیل، رمز، (حالت ساخت: نام). دکمه‌ساخت اکانت فقط وقتی `profilesCount===0` یا کاربر لاگین‌شده ادمین است نمایش داده شود — پیاده‌سازی: کوئری `select count` غیرممکن است بدون لاگین؛ پس همیشه «ساخت اکانت» را با متن «در انتظار تایید ادمین» نمایش بده و مسیر ساختِ واقعی کاربر را در Task 10 پنل ادمین بگذار. این صفحه فقط ورود + یک لینک کوچک «ساخت ادمین اولیه» که خود问询 می‌کند: اگر table خالی است signup انجام می‌دهد (اگر کسی زودتر ساخته، عضو غیرتایید می‌شود — بی‌ضرر).
-فرم:
-
-```jsx
-const { data } = await supabase.from('profiles').select('id', { count: 'exact', head: true })
-const isFirstEver = data?.length === 0
-```
-
-اگر `isFirstEver` بود تب «ساخت اکانت ادمین» نشان بده (با فراخوانی `signUp`) وگرنه فقط ورود. بعد از موفقیت → `navigate('/')`. خطاها با پیام فارسی درجای فرم.
+فرم ساده ایمیل+رمز برای ورود. قبل از رندر، `const { data: need } = await supabase.rpc('setup_needed')` می‌خواند؛ اگر `need === true` (هنوز هیچ پروفایلی نیست) تب دوم «ساخت اکانت ادمین اولیه» با فیلد نام + ایمیل + رمز نمایش داده می‌شود و با `signUp(name, email, password)` اکانت اول را می‌سازد (تریگر آن را admin+approved می‌کند و نشست هم خودکار برقرار است). اگر `need === false` فقط فرم ورود هست؛ ساخت اکانت عمومی وجود ندارد (کاربر جدید فقط از پنل ادمین ساخته می‌شود — Task 10). بعد از موفقیت `navigate('/')`. خطاها با پیام فارسی درجای فرم.
 
 - [ ] **Step 4: `Protected.jsx` و `Layout.jsx`**
 
@@ -774,7 +776,27 @@ git add src/pages/Today.jsx src/components/ && git commit -m "feat: today view w
 - Consumes: `signUp` از auth، `profiles/programs` tables
 - Produces: CRUD پروفایل + ساخت اکانت.
 
-- [ ] **Step 1: ساخت اکانت** — فرم (نام، ایمیل، رمز موقت، وزن، theme، برنامه). فراخوانی `signUp` با email/pass — چون «Confirm email» خاموش است اکانت تأیید می‌شود اما **نشست کاربر جدید جای کاربر ادمین را می‌گیرد**: بلافاصله `supabase.auth.signOut()` و `queryClient.invalidateQueries(['profile'])`. پروفایل تازه‌ساخته را با update به `approved=true, role, weight_kg, theme, program_id` برسان (شناسایی با `name`+ بی‌تأخیر select روی latest).
+- [ ] **Step 1: ساخت اکانت (جریان ذخیره/بازیابی نشست — مهم)**
+
+`signUp` با ایمیل تأییدشده، **خودکار نشست ادمین را با نشست کاربر جدید عوض می‌کند**. ترتیب درست:
+
+```js
+const saved = (await supabase.auth.getSession()).data.session   // ۱) نگه‌داشتن نشست ادمین
+const { data: su, error } = await supabase.auth.signUp({        // ۲) ساخت کاربر جدید
+  email, password, options: { data: { name } }
+})
+// ۳) برگرداندن نشست ادمین
+await supabase.auth.signOut()
+await supabase.auth.setSession({ access_token: saved.access_token, refresh_token: saved.refresh_token })
+// ۴) پیدا کردن پروفایل تازه با ایمیل (ستون email از تریگر پر شده) و تکمیلش
+const { data: prof } = await supabase.from('profiles').select('id')
+  .eq('email', email).maybeSingle()
+if (prof) await supabase.from('profiles').update({
+  approved: true, role, weight_kg: weightKg, theme, program_id: programId
+}).eq('id', prof.id)
+```
+
+نشست‌ها فقط در حافظه نگه داشته می‌شوند (نه localStorage). فرم: نام، ایمیل، رمز موقت ۸+، وزن، theme، برنامه، نقش. رمز فقط یک‌بار در پیام موفقیت نمایش داده شود.
 - [ ] **Step 2: جدول لیست کاربران** — select کامل profiles؛ inline edit وزن/تایید/نقش/برنامه (آپدیت با RLS admin مجاز است).
 - [ ] **Step 3: ثبت در `App.jsx`** `admin/*` → `AdminRoutes` با مسیر `users`.
 - [ ] **Step 4: commit** `feat: admin users panel (create, approve, assign program)`
