@@ -51,6 +51,25 @@ select count(*) from pg_policies where schemaname = 'public';
 
 بدون این کار، ثبت‌نام اولین ادمین ایمیل تأیید می‌فرستد و نشست خودکار برقرار نمی‌شود (Flow لاگین اپ روی نشست فوری بعد از `signUp` ساخته شده است).
 
+### ۱.۴ اجرای مهاجرت ۰۰۰۲ (برنامه‌های شخصی کاربر)
+
+> پیش‌نیاز: اجرای موفق ۱.۱. این مهاجرت مدل برنامه را به «بخش‌های با نام دلخواه» و
+> «حذف نرم» ارتقا می‌دهد و دادهٔ موجود را خودکار نگاشت می‌کند.
+
+1. داشبورد Supabase → **SQL Editor** → **New query**.
+2. محتوای کامل [`supabase/migrations/0002_user_programs.sql`](../supabase/migrations/0002_user_programs.sql) را Paste کن → **Run**.
+3. اگر `seed.sql` قبلاً اجرا شده، لازم به تکرار نیست (نگاشت در همین مهاجرت انجام می‌شود). برای **پروژه نو**: به‌ترتیب `0001` → `0002` → `seed.sql` را اجرا کن.
+
+صحت‌سنجی:
+
+```sql
+select count(*) from information_schema.tables
+ where table_schema='public' and table_name='program_sections';           -- انتظار: 1
+select count(*) from pg_policies where schemaname='public';               -- انتظار: 20
+select count(*) from pg_views where viewname='v_day_progress';            -- انتظار: 1
+select count(*) from pg_trigger where tgname='programs_limit_before_insert' and not tgisinternal; -- انتظار: 1
+```
+
 ---
 
 بخش ۲ (ساخت سه کاربر اولیه و تخصیص برنامه‌ها) در انتهای پیاده‌سازی به همین فایل اضافه می‌شود.
