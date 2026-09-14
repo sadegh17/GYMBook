@@ -1,17 +1,9 @@
 import { Navigate, Routes, Route } from 'react-router-dom'
 import { useAuth } from '../../lib/auth.jsx'
 import Users from './Users.jsx'
+import Exercises from './Exercises.jsx'
 
-// Exercises and Programs admin panels are filled in by Tasks 11-12.
-export function ExercisesStub() {
-  return (
-    <div className="card">
-      <h2>تمرین‌ها</h2>
-      <p className="muted">مدیریت تمرین‌ها در اینجا انجام خواهد شد.</p>
-    </div>
-  )
-}
-
+// Programs admin panel is filled in by Task 12.
 export function ProgramsStub() {
   return (
     <div className="card">
@@ -29,7 +21,7 @@ export default function AdminRoutes() {
     <Routes>
       <Route index element={<Navigate to="users" replace />} />
       <Route path="users" element={<Users />} />
-      <Route path="exercises" element={<ExercisesStub />} />
+      <Route path="exercises" element={<Exercises />} />
       <Route path="programs" element={<ProgramsStub />} />
       <Route path="*" element={<Navigate to="users" replace />} />
     </Routes>
