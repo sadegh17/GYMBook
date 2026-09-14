@@ -107,20 +107,25 @@ body[data-theme="saghar"] .timerbar button.main{background:linear-gradient(135de
 /* ---- Profile (Task 7 + redesign) ---- */
 .profile-card{margin-bottom:14px}
 .profile-card h2{margin:0;font-size:17px}
-.profile-card .desc{margin:4px 0 12px;font-size:13px;color:var(--muted)}
-.profile-card .field{margin:12px 0}
-.profile-card .lbl{display:block;margin:0 0 6px;color:var(--muted);font-size:13.5px}
-.profile-card input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit}
-.profile-card input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
-.profile-card input[aria-invalid="true"]{border-color:#f87171;box-shadow:0 0 0 3px rgba(248,113,113,.15)}
-.profile-card .hint{font-size:12px;color:var(--muted);margin:6px 0 0}
-.profile-card .ferr{font-size:12.5px;color:#f87171;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);border-radius:8px;padding:6px 10px;margin:6px 0 0}
-.profile-card .match.good{color:var(--ok)}
-.profile-card .match.warn{color:var(--warn)}
-.profile-card .match.bad{color:#f87171}
-.profile-card .form-actions{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
-.profile-card .form-actions .err,.profile-card .form-actions .ok{font-size:13px;margin:0}
+.card .desc{margin:4px 0 12px;font-size:13px;color:var(--muted)}
 .ok{color:var(--ok)}
+
+/* ---- Shared form Field (Profile + admin) ---- */
+.field{margin:12px 0}
+.field .lbl{display:block;margin:0 0 6px;color:var(--muted);font-size:13.5px}
+.field input,.field select,.field textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit}
+.field textarea{min-height:64px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
+.field input[aria-invalid="true"]{border-color:#f87171;box-shadow:0 0 0 3px rgba(248,113,113,.15)}
+.field .hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.field .ferr{font-size:12.5px;color:#f87171;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.4);border-radius:8px;padding:6px 10px;margin:6px 0 0}
+.field .match.good{color:var(--ok)}
+.field .match.warn{color:var(--warn)}
+.field .match.bad{color:#f87171}
+.field-row{display:grid;gap:10px}
+@media (min-width:640px){ .field-row{grid-template-columns:1fr 1fr} .field-row.cols-3{grid-template-columns:1fr 1fr 1fr} }
+.form-actions{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.form-actions .err,.form-actions .ok{font-size:13px;margin:0}
 
 /* ---- Report (Task 8) ---- */
 .report-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
@@ -146,12 +151,8 @@ body[data-theme="saghar"] .timerbar button.main{background:linear-gradient(135de
 
 /* ---- Program builder (Task 12) ---- */
 .pb-list{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
-.pb-new{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
-.pb-new label{display:block;color:var(--muted);font-size:13.5px}
-.pb-new input{padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit;margin-top:4px}
+.pb-list .btn{flex:0 0 auto}
 .pb-dayhead{margin-top:12px}
-.pb-dayfields{display:grid;gap:8px}
-.pb-dayfields input{width:100%;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit;margin-top:4px}
 .pb-col{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .pb-item{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px;
   background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
@@ -167,3 +168,29 @@ body[data-theme="saghar"] .timerbar button.main{background:linear-gradient(135de
 .card-table th,.card-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .card-table thead th{color:var(--muted);font-size:12.5px;font-weight:800}
 .card-table tbody tr:last-child td{border-bottom:none}
+
+/* ---- Admin panel ---- */
+.admin-tabs{display:flex;gap:8px;margin:14px auto 6px;padding:0 14px;max-width:820px}
+.admin-tabs a{flex:1;text-align:center;padding:9px 6px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:700;transition:.2s}
+.admin-tabs a.active{background:linear-gradient(135deg,var(--acc),#2563eb);color:#fff;border-color:transparent;
+  box-shadow:0 4px 14px rgba(14,165,233,.3)}
+.ok-banner{background:#122a1c;border:1px solid #1c4532;color:#bbf7d0;border-radius:var(--radius);
+  padding:12px 14px;font-size:13.5px;margin:12px 0 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ok-banner b{font-family:monospace;letter-spacing:.5px}
+.user-row{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:12px}
+.user-row:hover{border-color:var(--acc)}
+.user-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.user-head b{font-size:15px}
+.user-head .email{font-size:12px;color:var(--muted);direction:ltr;unicode-bidi:plaintext}
+.user-badge{border-radius:999px;padding:1px 10px;font-size:11px;font-weight:800}
+.user-badge.admin{background:rgba(56,189,248,.16);color:var(--acc);border:1px solid var(--acc)}
+.user-badge.member{background:var(--card);color:var(--muted);border:1px solid var(--line)}
+.user-badge.pending{background:rgba(251,191,36,.14);color:var(--warn);border:1px solid #4a3a10}
+.user-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.user-field{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--muted)}
+.user-field input,.user-field select{padding:7px;border-radius:9px;border:1px solid var(--line);
+  background:var(--bg);color:var(--txt);font-family:inherit;font-size:13px;width:100%}
+.user-field.check{flex-direction:row;align-items:center;gap:6px;justify-self:start;margin-top:8px}
+.inline-msg{font-size:12.5px;margin:0 0 10px}
+.small{font-size:12px}

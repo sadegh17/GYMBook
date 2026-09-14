@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/auth.jsx'
+import Field from '../components/Field.jsx'
 import { fa } from '../lib/calc.js'
 
 export function validateWeight(v) {
@@ -16,18 +17,6 @@ function useAutoHide(msg, setMsg, ms = 4000) {
     const t = setTimeout(() => setMsg(''), ms)
     return () => clearTimeout(t)
   }, [msg])
-}
-
-function Field({ id, label, hint, hintClass, error, children }) {
-  return (
-    <div className="field">
-      <label className="lbl" htmlFor={id}>{label}</label>
-      {children}
-      {error
-        ? <p id={`${id}-error`} className="ferr" role="alert">{error}</p>
-        : hint ? <p id={`${id}-hint`} className={hintClass || 'hint'}>{hint}</p> : null}
-    </div>
-  )
 }
 
 export default function Profile() {

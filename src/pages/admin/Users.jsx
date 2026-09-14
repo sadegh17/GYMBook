@@ -2,9 +2,13 @@ import React, { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../lib/auth.jsx'
+import Field from '../../components/Field.jsx'
 import { createUserWithRestore, createUserErrorFa } from '../../lib/adminUsers.js'
 
-const THEMES = ['sadeq', 'saghar']
+const THEMES = [
+  { key: 'sadeq', label: 'آبی (صادق)' },
+  { key: 'saghar', label: 'صورتی (ساغر)' },
+]
 
 async function fetchProfiles() {
   const { data, error } = await supabase.from('profiles').select('*').order('created_at')
@@ -32,7 +36,6 @@ export default function Users() {
   const usersQuery = useQuery({ queryKey: ['profiles'], queryFn: fetchProfiles, enabled: isAdmin })
   const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms, enabled: isAdmin })
   const programs = programsQuery.data ?? []
-  const titleOf = (pid) => programs.find((p) => p.id === pid)?.title ?? pid ?? '—'
 
   const [form, setForm] = useState({ name: '', email: '', password: '', weight: '', theme: 'sadeq', program: '', role: 'member' })
   const [busy, setBusy] = useState(false)
@@ -44,6 +47,7 @@ export default function Users() {
   const bannerPwRef = React.useRef('')
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+  const formValid = form.name.trim() !== '' && form.email.trim() !== '' && form.password.length >= 8
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -96,38 +100,49 @@ export default function Users() {
     <div className="wrap">
       <div className="card">
         <h2>ساخت کاربر</h2>
+        <p className="desc">کاربر جدید با همین رمز موقت وارد می‌شود و بعداً از صفحه پروفایل رمز را عوض می‌کند.</p>
         <form onSubmit={handleSubmit} noValidate>
-          <label>نام
-            <input type="text" value={form.name} onChange={set('name')} required />
-          </label>
-          <label>ایمیل
-            <input type="email" dir="ltr" value={form.email} onChange={set('email')} required />
-          </label>
-          <label>رمز موقت (حداقل ۸ کاراکتر)
-            <input type="password" dir="ltr" value={form.password} onChange={set('password')} required minLength={8} />
-          </label>
-          <label>وزن (کیلوگرم)
-            <input type="number" step="0.1" min="20" max="250" value={form.weight} onChange={set('weight')} />
-          </label>
-          <label>تم
-            <select value={form.theme} onChange={set('theme')}>
-              {THEMES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </label>
-          <label>برنامه
-            <select value={form.program} onChange={set('program')}>
-              <option value="">بدون برنامه</option>
-              {programs.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-            </select>
-          </label>
-          <label>نقش
-            <select value={form.role} onChange={set('role')}>
-              <option value="member">member</option>
-              <option value="admin">admin</option>
-            </select>
-          </label>
-          {err && <p className="err" role="alert">{err}</p>}
-          <button type="submit" className="btn primary" disabled={busy}>ساخت کاربر</button>
+          <div className="field-row">
+            <Field id="uc-name" label="نام">
+              <input id="uc-name" type="text" value={form.name} maxLength={40} onChange={set('name')} required />
+            </Field>
+            <Field id="uc-email" label="ایمیل">
+              <input id="uc-email" type="email" dir="ltr" value={form.email} onChange={set('email')} required />
+            </Field>
+          </div>
+          <div className="field-row cols-3">
+            <Field id="uc-pass" label="رمز موقت" hint="حداقل ۸ کاراکتر">
+              <input id="uc-pass" type="password" dir="ltr" autoComplete="new-password" value={form.password} onChange={set('password')} required minLength={8} />
+            </Field>
+            <Field id="uc-weight" label="وزن (کیلوگرم)">
+              <input id="uc-weight" type="number" step="0.1" min="20" max="250" inputMode="decimal" value={form.weight} onChange={set('weight')} />
+            </Field>
+            <Field id="uc-theme" label="تم">
+              <select id="uc-theme" value={form.theme} onChange={set('theme')}>
+                {THEMES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div className="field-row">
+            <Field id="uc-program" label="برنامه تمرینی">
+              <select id="uc-program" value={form.program} onChange={set('program')}>
+                <option value="">بدون برنامه</option>
+                {programs.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </select>
+            </Field>
+            <Field id="uc-role" label="نقش">
+              <select id="uc-role" value={form.role} onChange={set('role')}>
+                <option value="member">کاربر</option>
+                <option value="admin">ادمین</option>
+              </select>
+            </Field>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="btn primary" disabled={busy || !formValid}>
+              {busy ? 'در حال ساخت…' : 'ساخت کاربر'}
+            </button>
+            {err && <span className="err" role="alert">{err}</span>}
+          </div>
         </form>
         {banner && (
           <div className="ok-banner" role="status">
@@ -140,8 +155,8 @@ export default function Users() {
 
       <div className="card">
         <h2>کاربران</h2>
-        <p className="muted hint">برای بازنشانی رمز، کاربر از صفحه پروفایل اقدام کند.</p>
-        {inlineMsg && <p className="err" role="alert">{inlineMsg}</p>}
+        <p className="desc">برای بازنشانی رمز، کاربر خودش از صفحه پروفایل اقدام کند.</p>
+        {inlineMsg && <p className="ferr inline-msg" role="alert">{inlineMsg}</p>}
         {usersQuery.isLoading && <div className="center muted" role="status">در حال بارگذاری…</div>}
         {usersQuery.isError && (
           <div className="center">
@@ -153,40 +168,47 @@ export default function Users() {
           <div key={u.id} className="user-row">
             <div className="user-head">
               <b>{u.name}</b>
-              <span className="muted" dir="ltr">{u.email}</span>
-              {!u.approved && <span className="chip">در انتظار تأیید</span>}
+              <span className={'user-badge ' + (u.role === 'admin' ? 'admin' : 'member')}>
+                {u.role === 'admin' ? 'ادمین' : 'کاربر'}
+              </span>
+              {!u.approved && <span className="user-badge pending">در انتظار تأیید</span>}
+              <span className="email">{u.email}</span>
             </div>
             <div className="user-fields">
-              <label>نقش
+              <div className="user-field">
+                <span>نقش</span>
                 <select aria-label={`نقش ${u.name}`} value={u.role}
                   onChange={(e) => inline(u.id, { role: e.target.value }, self?.id === u.id)}>
-                  <option value="member">member</option>
-                  <option value="admin">admin</option>
+                  <option value="member">کاربر</option>
+                  <option value="admin">ادمین</option>
                 </select>
-              </label>
-              <label>تأییدشده
-                <input aria-label={`تأیید ${u.name}`} type="checkbox" checked={!!u.approved}
-                  onChange={(e) => inline(u.id, { approved: e.target.checked }, self?.id === u.id)} />
-              </label>
-              <label>وزن
-                <input aria-label={`وزن ${u.name}`} type="number" step="0.1" defaultValue={u.weight_kg ?? ''}
+              </div>
+              <div className="user-field">
+                <span>وزن</span>
+                <input aria-label={`وزن ${u.name}`} type="number" step="0.1" inputMode="decimal" defaultValue={u.weight_kg ?? ''}
                   onBlur={(e) => { if (e.target.value !== '' && Number(e.target.value) !== u.weight_kg) inline(u.id, { weight_kg: Number(e.target.value) }, self?.id === u.id) }} />
-              </label>
-              <label>تم
+              </div>
+              <div className="user-field">
+                <span>تم</span>
                 <select aria-label={`تم ${u.name}`} value={u.theme ?? 'sadeq'}
                   onChange={(e) => inline(u.id, { theme: e.target.value }, self?.id === u.id)}>
-                  {THEMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  {THEMES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
                 </select>
-              </label>
-              <label>برنامه
+              </div>
+              <div className="user-field">
+                <span>برنامه</span>
                 <select aria-label={`برنامه ${u.name}`} value={u.program_id ?? ''}
                   onChange={(e) => inline(u.id, { program_id: e.target.value || null }, self?.id === u.id)}>
                   <option value="">بدون برنامه</option>
                   {programs.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
                 </select>
+              </div>
+              <label className="user-field check">
+                <input aria-label={`تأیید ${u.name}`} type="checkbox" checked={!!u.approved}
+                  onChange={(e) => inline(u.id, { approved: e.target.checked }, self?.id === u.id)} />
+                <span>تأیید حساب</span>
               </label>
             </div>
-            <div className="muted small">برنامه: {titleOf(u.program_id)}</div>
           </div>
         ))}
       </div>

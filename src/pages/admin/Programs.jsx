@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../lib/auth.jsx'
+import Field from '../../components/Field.jsx'
 import { moveItem } from '../../lib/programMove.js'
 
 const SECTIONS = [
@@ -179,14 +180,20 @@ export default function Programs() {
         {err && <p className="err" role="alert">{err}</p>}
         {toast && <div className="ok-banner" role="status">{toast}</div>}
 
-        <form onSubmit={createProgram} className="pb-new">
-          <label>عنوان برنامه
-            <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required />
-          </label>
-          <label>توضیح
-            <input type="text" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
-          </label>
-          <button type="submit" className="btn primary" disabled={busy}>برنامه جدید</button>
+        <form onSubmit={createProgram} noValidate>
+          <div className="field-row">
+            <Field id="pg-title" label="عنوان برنامه">
+              <input id="pg-title" type="text" value={newTitle} maxLength={60} onChange={(e) => setNewTitle(e.target.value)} required />
+            </Field>
+            <Field id="pg-desc" label="توضیح">
+              <input id="pg-desc" type="text" value={newDesc} maxLength={120} onChange={(e) => setNewDesc(e.target.value)} />
+            </Field>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="btn primary" disabled={busy || newTitle.trim() === ''}>
+              {busy ? 'در حال ساخت…' : 'برنامه جدید'}
+            </button>
+          </div>
         </form>
 
         {programsQuery.isLoading && <div className="center muted" role="status">در حال بارگذاری…</div>}
@@ -234,16 +241,16 @@ export default function Programs() {
 
           {day && (
             <div className="dayhead pb-dayhead">
-              <div className="pb-dayfields">
-                <label>عنوان روز
-                  <input type="text" defaultValue={day.title ?? ''} onBlur={(e) => { if (e.target.value !== (day.title ?? '')) saveDayField({ title: e.target.value }) }} />
-                </label>
-                <label>زیرعنوان روز
-                  <input type="text" defaultValue={day.sub ?? ''} onBlur={(e) => { if (e.target.value !== (day.sub ?? '')) saveDayField({ sub: e.target.value }) }} />
-                </label>
-                <label>تمرکز روز
-                  <input type="text" defaultValue={day.focus ?? ''} onBlur={(e) => { if (e.target.value !== (day.focus ?? '')) saveDayField({ focus: e.target.value }) }} />
-                </label>
+            <div className="field-row cols-3">
+                <Field id="day-title" label="عنوان روز">
+                  <input id="day-title" type="text" defaultValue={day.title ?? ''} onBlur={(e) => { if (e.target.value !== (day.title ?? '')) saveDayField({ title: e.target.value }) }} />
+                </Field>
+                <Field id="day-sub" label="زیرعنوان روز">
+                  <input id="day-sub" type="text" defaultValue={day.sub ?? ''} onBlur={(e) => { if (e.target.value !== (day.sub ?? '')) saveDayField({ sub: e.target.value }) }} />
+                </Field>
+                <Field id="day-focus" label="تمرکز روز">
+                  <input id="day-focus" type="text" defaultValue={day.focus ?? ''} onBlur={(e) => { if (e.target.value !== (day.focus ?? '')) saveDayField({ focus: e.target.value }) }} />
+                </Field>
               </div>
             </div>
           )}

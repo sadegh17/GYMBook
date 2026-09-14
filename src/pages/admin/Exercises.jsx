@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../lib/auth.jsx'
+import Field from '../../components/Field.jsx'
 import { fa } from '../../lib/calc.js'
 import { validateExercise, countUsages, isDuplicateNameEn } from '../../lib/adminExercises.js'
 
@@ -50,6 +51,14 @@ export default function Exercises() {
   }
 
   const duplicateWarn = isDuplicateNameEn(form.name_en, listQuery.data, editing?.id)
+
+  // Field-level mapping of validateExercise() messages (shown only after submit):
+  const findErr = (kw) => errs.find((m) => m.includes(kw)) ?? ''
+  const nameFaErr = findErr('فارسی')
+  const metErr = findErr('MET')
+  const sprErr = findErr('ثانیه')
+  const mappedKeys = ['فارسی', 'MET', 'ثانیه']
+  const unmappedErrs = errs.filter((m) => !mappedKeys.some((k) => m.includes(k)))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -154,39 +163,54 @@ export default function Exercises() {
         <div className="card" role="dialog" aria-label={editing ? 'ویرایش حرکت' : 'افزودن حرکت'}>
           <h3>{editing ? 'ویرایش حرکت' : 'افزودن حرکت'}</h3>
           <form onSubmit={handleSubmit} noValidate>
-            <label>نام فارسی
-              <input type="text" value={form.name_fa} onChange={set('name_fa')} required />
-            </label>
-            <label>نام انگلیسی
-              <input type="text" dir="ltr" value={form.name_en ?? ''} onChange={set('name_en')} />
-            </label>
-            {duplicateWarn && <p className="err" role="alert">حرکت دیگری با همین نام انگلیسی وجود دارد</p>}
-            <label>لینک گیف
-              <input type="url" dir="ltr" value={form.gif_url ?? ''} onChange={set('gif_url')} />
-            </label>
-            <label>لینک صفحه
-              <input type="url" dir="ltr" value={form.page_url ?? ''} onChange={set('page_url')} />
-            </label>
-            <label>آموزش اجرا
-              <textarea value={form.how_to ?? ''} onChange={set('how_to')} />
-            </label>
-            <label>نکته
-              <textarea value={form.tip ?? ''} onChange={set('tip')} />
-            </label>
-            <label>MET
-              <input type="number" step="0.1" min="1" max="15" value={form.met ?? ''} onChange={set('met')} />
-            </label>
-            <label>ثانیه بر تکرار
-              <input type="number" step="0.1" min="0.5" max="20" value={form.sec_per_rep ?? ''} onChange={set('sec_per_rep')} />
-            </label>
-            {errs.length > 0 && (
-              <ul>
-                {errs.map((m) => <li key={m} className="err" role="alert">{m}</li>)}
-              </ul>
+            <div className="field-row">
+              <Field id="ex-fa" label="نام فارسی" error={nameFaErr}>
+                <input id="ex-fa" type="text" value={form.name_fa} maxLength={60}
+                  onChange={set('name_fa')}
+                  aria-invalid={nameFaErr ? 'true' : undefined}
+                  aria-describedby={nameFaErr ? 'ex-fa-error' : undefined} />
+              </Field>
+              <Field id="ex-en" label="نام انگلیسی"
+                hint={duplicateWarn ? 'حرکت دیگری با همین نام انگلیسی وجود دارد' : null}
+                hintClass={duplicateWarn ? 'match warn' : null}>
+                <input id="ex-en" type="text" dir="ltr" value={form.name_en ?? ''} onChange={set('name_en')} />
+              </Field>
+            </div>
+            <div className="field-row cols-3">
+              <Field id="ex-met" label="MET (شدت)" hint="بین ۱ تا ۱۵" error={metErr}>
+                <input id="ex-met" type="number" step="0.1" min="1" max="15" inputMode="decimal" value={form.met ?? ''}
+                  onChange={set('met')}
+                  aria-invalid={metErr ? 'true' : undefined}
+                  aria-describedby={metErr ? 'ex-met-error' : 'ex-met-hint'} />
+              </Field>
+              <Field id="ex-spr" label="ثانیه بر تکرار" hint="برای حرکات زمان‌محور ۱" error={sprErr}>
+                <input id="ex-spr" type="number" step="0.1" min="0.5" max="20" inputMode="decimal" value={form.sec_per_rep ?? ''}
+                  onChange={set('sec_per_rep')}
+                  aria-invalid={sprErr ? 'true' : undefined}
+                  aria-describedby={sprErr ? 'ex-spr-error' : 'ex-spr-hint'} />
+              </Field>
+              <Field id="ex-gif" label="لینک گیف">
+                <input id="ex-gif" type="url" dir="ltr" value={form.gif_url ?? ''} onChange={set('gif_url')} />
+              </Field>
+            </div>
+            <Field id="ex-page" label="لینک صفحه آموزش">
+              <input id="ex-page" type="url" dir="ltr" value={form.page_url ?? ''} onChange={set('page_url')} />
+            </Field>
+            <Field id="ex-how" label="آموزش اجرا">
+              <textarea id="ex-how" value={form.how_to ?? ''} onChange={set('how_to')} />
+            </Field>
+            <Field id="ex-tip" label="نکته">
+              <textarea id="ex-tip" value={form.tip ?? ''} onChange={set('tip')} />
+            </Field>
+            {unmappedErrs.length > 0 && (
+              <p className="ferr" role="alert">{unmappedErrs.join(' — ')}</p>
             )}
-            <button type="submit" className="btn primary" disabled={busy}>ذخیره</button>
-            {' '}
-            <button type="button" className="btn" onClick={() => setModalOpen(false)}>انصراف</button>
+            <div className="form-actions">
+              <button type="submit" className="btn primary" disabled={busy}>
+                {busy ? 'در حال ذخیره…' : 'ذخیره'}
+              </button>
+              <button type="button" className="btn" onClick={() => setModalOpen(false)}>انصراف</button>
+            </div>
           </form>
         </div>
       )}
