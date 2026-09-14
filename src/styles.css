@@ -99,3 +99,12 @@ body[data-theme="saghar"] nav.days button.active{background:linear-gradient(135d
   box-shadow:0 6px 18px rgba(236,72,153,.35)}
 body[data-theme="saghar"] .timerbar button.main{background:linear-gradient(135deg,#ec4899,#a855f7)}
 @media (min-width:640px){ .gifbox img{max-height:340px} }
+
+/* ---- Profile (Task 7) ---- */
+.profile-card{margin-bottom:14px}
+.profile-card h2{margin:0 0 12px;font-size:17px}
+.profile-card label{display:block;margin:10px 0;color:var(--muted);font-size:13.5px}
+.profile-card input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit;margin-top:4px}
+.profile-card .hint{font-size:12px;margin:6px 0 0}
+.profile-card .btn.primary{margin-top:12px}
+.ok{color:var(--ok)}
