@@ -117,6 +117,7 @@ export default function Exercises() {
           </div>
         )}
         {(listQuery.data ?? []).length > 0 && (
+          <div className="card-table">
           <table className="history-table">
             <thead>
               <tr>
@@ -145,6 +146,7 @@ export default function Exercises() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

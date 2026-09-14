@@ -62,6 +62,7 @@ export default function ExerciseHistory() {
         : rows.length === 0
           ? <p className="muted">هنوز داده‌ای ثبت نشده است.</p>
           : (
+            <div className="card-table">
             <table className="history-table">
               <thead>
                 <tr>
@@ -82,6 +83,7 @@ export default function ExerciseHistory() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
     </div>
   )

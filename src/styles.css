@@ -150,3 +150,10 @@ body[data-theme="saghar"] .timerbar button.main{background:linear-gradient(135de
 .pb-item input,.pb-item select{width:76px;padding:6px;border-radius:8px;border:1px solid var(--line);
   background:var(--bg);color:var(--txt);font-family:inherit}
 .pb-col select{padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-family:inherit;margin-top:6px}
+
+/* ---- Scrollable card tables (bank + history) ---- */
+.card-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.card-table table{width:100%;border-collapse:collapse;min-width:560px}
+.card-table th,.card-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.card-table thead th{color:var(--muted);font-size:12.5px;font-weight:800}
+.card-table tbody tr:last-child td{border-bottom:none}
