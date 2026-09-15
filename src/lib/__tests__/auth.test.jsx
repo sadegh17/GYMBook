@@ -134,6 +134,19 @@ describe('AuthContext', () => {
     expect(mocks.eqUpdate).toHaveBeenCalledWith('id', 'u1')
   })
 
+  it('keeps loading true until getSession resolves (no premature redirect)', async () => {
+    let resolve
+    mocks.getSession.mockReturnValue(new Promise((res) => { resolve = res }))
+    mocks.maybeSingle.mockResolvedValue({ data: null, error: null })
+    mocks.eq.mockReturnValue({ maybeSingle: mocks.maybeSingle })
+    mocks.select.mockReturnValue({ eq: mocks.eq })
+    mocks.from.mockReturnValue({ select: mocks.select })
+    render(<AuthProvider><Probe /></AuthProvider>)
+    expect(screen.getByTestId('loading').textContent).toBe('true')
+    await act(async () => { resolve({ data: { session: { user: { id: 'u1' } } } }) })
+    await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'))
+  })
+
   it('updateTheme does nothing without a session', async () => {
     let ctx
     const Grab = () => { ctx = useAuth(); return null }

@@ -28,21 +28,26 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [attempt, setAttempt] = useState(0)
+  const [sessionChecked, setSessionChecked] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setSessionChecked(true)
+    })
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => sub.subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
+    if (!sessionChecked) return
     let stop = false
     if (!session?.user) { setProfile(null); setLoading(false); return }
     setLoading(true)
     supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle()
       .then(({ data }) => { if (!stop) { setProfile(data ?? null); setLoading(false) } })
     return () => { stop = true }
-  }, [session, attempt])
+  }, [session, attempt, sessionChecked])
 
   const refresh = useCallback(() => setAttempt((a) => a + 1), [])
 
