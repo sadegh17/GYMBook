@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DAY_KEYS, dayLabel, todayDayKey, buildDaysForKeys } from '../programDays.js'
+import { DAY_KEYS, dayLabel, todayDayKey, buildDaysForKeys, dateForWeekday } from '../programDays.js'
 
 describe('programDays', () => {
   it('has 7 keys and Persian labels', () => {
@@ -21,5 +21,17 @@ describe('programDays', () => {
   })
   it('buildDaysForKeys ignores unknown keys', () => {
     expect(buildDaysForKeys(['nope'])).toEqual([])
+  })
+  it('dateForWeekday returns the date of that day within the current Sat-start week', () => {
+    // 2026-09-12 is a Saturday
+    expect(dateForWeekday('sat', new Date(2026, 8, 12))).toBe('2026-09-12')
+    expect(dateForWeekday('sun', new Date(2026, 8, 12))).toBe('2026-09-13')
+    expect(dateForWeekday('fri', new Date(2026, 8, 12))).toBe('2026-09-18')
+  })
+  it('dateForWeekday keeps the same week when "now" is mid-week', () => {
+    // 2026-09-16 is a Wednesday; week still starts on 2026-09-12 (Sat)
+    expect(dateForWeekday('sat', new Date(2026, 8, 16))).toBe('2026-09-12')
+    expect(dateForWeekday('wed', new Date(2026, 8, 16))).toBe('2026-09-16')
+    expect(dateForWeekday('thu', new Date(2026, 8, 16))).toBe('2026-09-17')
   })
 })

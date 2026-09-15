@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   eq: vi.fn(),
   select: vi.fn(),
   from: vi.fn(),
+  update: vi.fn(),
+  eqUpdate: vi.fn(),
 }))
 
 vi.mock('../supabase.js', () => ({
@@ -37,6 +39,7 @@ function Probe() {
       <span data-testid="loading">{String(ctx.loading)}</span>
       <span data-testid="session">{ctx.session ? ctx.session.user.id : 'none'}</span>
       <span data-testid="profile">{ctx.profile ? ctx.profile.role : 'none'}</span>
+      <span data-testid="theme">{ctx.profile ? ctx.profile.theme : 'none'}</span>
     </div>
   )
 }
@@ -49,7 +52,9 @@ beforeEach(async () => {
   mocks.maybeSingle.mockResolvedValue({ data: null, error: null })
   mocks.eq.mockReturnValue({ maybeSingle: mocks.maybeSingle })
   mocks.select.mockReturnValue({ eq: mocks.eq })
-  mocks.from.mockReturnValue({ select: mocks.select })
+  mocks.eqUpdate.mockResolvedValue({ error: null })
+  mocks.update.mockReturnValue({ eq: mocks.eqUpdate })
+  mocks.from.mockReturnValue({ select: mocks.select, update: mocks.update })
   const mod = await import('../auth.jsx')
   AuthProvider = mod.AuthProvider
   useAuth = mod.useAuth
@@ -111,6 +116,31 @@ describe('AuthContext', () => {
       await ctx.signOut()
     })
     expect(mocks.signOut).toHaveBeenCalled()
+  })
+
+  it('updateTheme persists to profiles and updates local profile immediately', async () => {
+    const session = { user: { id: 'u1' } }
+    mocks.getSession.mockResolvedValue({ data: { session } })
+    mocks.maybeSingle.mockResolvedValue({ data: { id: 'u1', role: 'member', theme: 'sadeq' } })
+    render(<AuthProvider><Probe /></AuthProvider>)
+    await waitFor(() => expect(screen.getByTestId('theme').textContent).toBe('sadeq'))
+    await act(async () => { await screen.findByTestId('loading') })
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    await act(async () => { await ctx.updateTheme('red') })
+    expect(mocks.update).toHaveBeenCalledWith({ theme: 'red' })
+    expect(mocks.eqUpdate).toHaveBeenCalledWith('id', 'u1')
+  })
+
+  it('updateTheme does nothing without a session', async () => {
+    let ctx
+    const Grab = () => { ctx = useAuth(); return null }
+    render(<AuthProvider><Grab /></AuthProvider>)
+    await waitFor(() => expect(ctx.loading).toBe(false))
+    await act(async () => { await ctx.updateTheme('red') })
+    expect(mocks.update).not.toHaveBeenCalled()
   })
 })
 

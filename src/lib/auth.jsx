@@ -77,5 +77,12 @@ export function AuthProvider({ children }) {
 
   const signOut = () => supabase.auth.signOut()
 
-  return <Ctx.Provider value={{ session, profile, loading, signIn, signUp, signOut, refresh }}>{children}</Ctx.Provider>
+  const updateTheme = async (theme) => {
+    if (!session?.user) return
+    const { error } = await supabase.from('profiles').update({ theme }).eq('id', session.user.id)
+    if (error) return
+    setProfile((p) => (p ? { ...p, theme } : p))
+  }
+
+  return <Ctx.Provider value={{ session, profile, loading, signIn, signUp, signOut, refresh, updateTheme }}>{children}</Ctx.Provider>
 }

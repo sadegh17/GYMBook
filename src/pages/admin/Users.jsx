@@ -4,11 +4,7 @@ import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../lib/auth.jsx'
 import Field from '../../components/Field.jsx'
 import { createUserWithRestore, createUserErrorFa, setMemberStatus } from '../../lib/adminUsers.js'
-
-const THEMES = [
-  { key: 'sadeq', label: 'آبی (صادق)' },
-  { key: 'saghar', label: 'صورتی (ساغر)' },
-]
+import { THEMES } from '../../lib/themes.js'
 
 async function fetchProfiles() {
   const { data, error } = await supabase.from('profiles').select('*').order('created_at')

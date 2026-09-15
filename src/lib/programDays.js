@@ -11,6 +11,16 @@ export function todayDayKey(now = new Date()) {
   return GETDAY_TO_KEY[now.getDay()] ?? 'sat'
 }
 
+const pad2 = (n) => String(n).padStart(2, '0')
+export function dateForWeekday(dayKey, now = new Date()) {
+  const offset = DAY_KEYS.indexOf(dayKey)
+  if (offset < 0) return null
+  const sat = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  sat.setDate(sat.getDate() - DAY_KEYS.indexOf(todayDayKey(now)))
+  sat.setDate(sat.getDate() + offset)
+  return `${sat.getFullYear()}-${pad2(sat.getMonth() + 1)}-${pad2(sat.getDate())}`
+}
+
 export function buildDaysForKeys(keys = []) {
   return keys
     .filter((k) => DAY_KEYS.includes(k))

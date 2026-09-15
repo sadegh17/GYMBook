@@ -20,4 +20,20 @@ describe('DayNav', () => {
     fireEvent.click(buttons[0])
     expect(onSelect).toHaveBeenCalledWith(0)
   })
+
+  it('renders the Jalali date (day + month) under each day label', () => {
+    const dates = { sat: '2026-09-12', sun: '2026-09-13' }
+    render(<DayNav days={days} current={1} dates={dates} onSelect={() => {}} />)
+    const buttons = screen.getAllByRole('button')
+    expect(buttons[0].textContent).toContain('شنبه')
+    expect(buttons[0].textContent).toContain('۲۱ شهریور')
+    expect(buttons[1].textContent).toContain('یکشنبه')
+    expect(buttons[1].textContent).toContain('۲۲ شهریور')
+  })
+
+  it('does not render a date when none is provided', () => {
+    render(<DayNav days={days} current={1} onSelect={() => {}} />)
+    const buttons = screen.getAllByRole('button')
+    expect(buttons[0].textContent).not.toMatch(/[۰-۹]/)
+  })
 })

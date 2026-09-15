@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth.jsx'
 import { fetchProgramTree, fetchChecks, toggleCheck } from '../lib/api.js'
 import { fetchSelectablePrograms } from '../lib/programs.js'
 import { fa, dayPercent, calcKcal, localISO } from '../lib/calc.js'
-import { todayDayKey } from '../lib/programDays.js'
+import { todayDayKey, dateForWeekday } from '../lib/programDays.js'
 import DayNav from '../components/DayNav.jsx'
 import ExerciseCard from '../components/ExerciseCard.jsx'
 import TimerBar from '../components/TimerBar.jsx'
@@ -53,6 +53,13 @@ export default function Today() {
   })
 
   const days = useMemo(() => programQuery.data ?? [], [programQuery.data])
+
+  const weekDates = useMemo(() => {
+    const now = new Date()
+    const map = {}
+    days.forEach((d) => { if (d.day_key) map[d.day_key] = dateForWeekday(d.day_key, now) })
+    return map
+  }, [days])
 
   useEffect(() => {
     if (currentDay === null && days.length) setCurrentDay(todayDefaultIndex(days))
@@ -144,7 +151,7 @@ export default function Today() {
         </div>
       )}
 
-      <DayNav days={days} current={currentDay ?? 0} onSelect={setCurrentDay} />
+      <DayNav days={days} current={currentDay ?? 0} dates={weekDates} onSelect={setCurrentDay} />
 
       {selected && (
         <div className="dayhead">
